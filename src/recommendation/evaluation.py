@@ -248,37 +248,38 @@ def _make_fake_recommendations_from_scenario(
     has_rain     = scenario["context"].get("is_raining", False)
     temperature  = scenario["context"].get("temperature", 28)
 
-    safe_minutes = get_safe_exposure_time(skin_type, uv)
-
-    # Proportional safe ratio: how much of the activity is UV-safe
-    # Capped at 1.0 - mirrors averaging is_safe across hourly forecast slots
-    safe_ratio_outdoor = min(1.0, safe_minutes / max(1.0, activity_min))
-
     scored = []
     for place in catalog:
-        shade_bonus  = 1.0 + (place.get("shade_coverage_pct", 50) / 200.0)
-        indoor_bonus = 1.3 if place.get("indoor_option", False) else 1.0
-        rain_penalty = 0.7 if (has_rain and not place.get("indoor_option", False)) else 1.0
-        heat_penalty = 0.8 if (
-            temperature > 36
-            and not place.get("has_shade", False)
-            and not place.get("indoor_option", False)
-        ) else 1.0
+        shade_pct = place.get("shade_coverage_pct", 50)
+        is_indoor = place.get("indoor_option", False)
 
-        # Indoor places get max(safe_ratio, 0.2) - they're always a valid refuge
-        if place.get("indoor_option", False):
-            sr = max(safe_ratio_outdoor, 0.2)
+        if is_indoor:
+            effective_uv = uv * 0.05
         else:
-            sr = safe_ratio_outdoor
+            shade_ratio = shade_pct / 100.0
+            transmission = (1.0 - shade_ratio) + (shade_ratio * 0.3)
+            effective_uv = uv * transmission
 
-        score = sr * shade_bonus * indoor_bonus * rain_penalty * heat_penalty
+        safe_minutes = get_safe_exposure_time(skin_type, effective_uv)
+        safe_ratio = min(1.0, safe_minutes / max(1.0, activity_min))
+
+        thermal_modifier = 1.0
+        rain_modifier = 1.0
+
+        if not is_indoor:
+            if temperature >= 35.0:
+                thermal_modifier = 0.5
+            if has_rain:
+                rain_modifier = 0.3
+
+        score = safe_ratio * thermal_modifier * rain_modifier
 
         scored.append({
             "name":          place["name"],
             "type":          place.get("type", ""),
             "score":         round(score, 4),
-            "safe_pct":      round(safe_ratio_outdoor * 100, 1),
-            "indoor_option": place.get("indoor_option", False),
+            "safe_pct":      round(safe_ratio * 100, 1),
+            "indoor_option": is_indoor,
             "has_shade":     place.get("has_shade", False),
             "lat":           place.get("lat"),
             "lon":           place.get("lon"),

@@ -22,7 +22,7 @@ from app.utils.forecaster import get_live_forecast
 from config import STATIC_DIR, LOCATIONS
 
 # -- Constants -----------------------------------------------------------------
-from src.recommendation.safe_time_policy import SKIN_TYPE_MULTIPLIER
+from src.recommendation.safe_time_policy import MED_VALUES_JM2
 
 WHO_CAT_COLORS = {
     "Low": "#27ae60", "Moderate": "#f1c40f", "High": "#e67e22",
@@ -79,9 +79,15 @@ def _load_places() -> list[dict]:
         return json.load(f).get("TOURIST_PLACES", [])
 
 
-def _compute_safe_minutes(uv: pd.Series, skin_type: int) -> pd.Series:
-    multiplier = SKIN_TYPE_MULTIPLIER[skin_type]
-    return (200.0 * multiplier) / (3.0 * np.maximum(1.0, uv))
+def _compute_safe_minutes(effective_uv: pd.Series, skin_type: int) -> pd.Series:
+    med_value = MED_VALUES_JM2[skin_type]
+    # Cap at 480 min (8h) for negligible UV; avoid division by near-zero
+    safe = np.where(
+        effective_uv <= 0.01,
+        480.0,
+        np.minimum(480.0, med_value / (effective_uv * 1.5))
+    )
+    return pd.Series(safe, index=effective_uv.index)
 
 
 def _filter_nearby_places(
@@ -126,9 +132,34 @@ def _score_places(
         if loc_fc.empty:
             continue
 
-        loc_fc["safe_minutes"] = _compute_safe_minutes(loc_fc["uv_predicted"], skin_type)
-        # Calculate proportional safety per hour, capped at 1.0 (100% safe)
+        # 1. Calculate Effective UVI (Indoor / Shade Attenuation)
+        # Indoor places: standard glass transmits ~5% of erythemal UV (Tuchinda et al. 2006)
+        # Shade: Tree canopy UPF ~3.3 transmits ~30% UV (Parisi et al. 1999)
+        shade_pct = place.get("shade_coverage_pct", 50)
+        is_indoor = place.get("indoor_option", False)
+
+        if is_indoor:
+            effective_uv = loc_fc["uv_predicted"] * 0.05
+        else:
+            shade_ratio = shade_pct / 100.0
+            # Open area gets 100% UV, shaded area gets 30% UV
+            transmission = (1.0 - shade_ratio) + (shade_ratio * 0.3)
+            effective_uv = loc_fc["uv_predicted"] * transmission
+
+        # 2. Calculate Safe Minutes using biological MED formula
+        loc_fc["safe_minutes"] = _compute_safe_minutes(effective_uv, skin_type)
+        
+        # 3. Calculate Base Safe Ratio
         loc_fc["safe_ratio"] = (loc_fc["safe_minutes"] / max(1.0, activity_min)).clip(upper=1.0)
+
+        # 4. Apply Thermal/Comfort Stressors (ISO 7243 WBGT limit)
+        # If outdoor and hot (>= 35C) without full shade, scale down safety due to heat strain
+        avg_temp = loc_fc["temperature"].mean() if "temperature" in loc_fc.columns else 30
+        is_raining = False  # Forecast rain status is not easily accessible here without more data, evaluation handles rain
+
+        thermal_modifier = 1.0
+        if not is_indoor and avg_temp >= 35.0:
+            thermal_modifier = 0.5  # Severe heat stress multiplier
 
         # Hours that are fully safe
         safe_hours = loc_fc[loc_fc["safe_ratio"] >= 1.0]
@@ -140,12 +171,8 @@ def _score_places(
             best_start = best_end = None
             avg_uv = loc_fc["uv_predicted"].mean()
 
-        shade_bonus  = 1.0 + (place.get("shade_coverage_pct", 50) / 200.0)
-        indoor_bonus = 1.3 if place.get("indoor_option", False) else 1.0
-        
-        # Score is based on the average safe ratio across daylight hours
         avg_safe_ratio = float(loc_fc["safe_ratio"].mean())
-        score = avg_safe_ratio * shade_bonus * indoor_bonus
+        score = avg_safe_ratio * thermal_modifier
 
         results.append({
             "name":           place["name"],
@@ -365,6 +392,14 @@ def render(
         if click_result:
             center_lat, center_lon, loc_sel = click_result
             station_dist = st.session_state.get("rec_nearest_dist", 0)
+
+            if station_dist > 50:
+                st.warning(
+                    f"⚠️ Vị trí bạn chọn cách trạm UV gần nhất ({LOCATION_NAMES.get(loc_sel, loc_sel)}) {station_dist:.1f} km. "
+                    "Vui lòng chọn vị trí trong bán kính 50km so với trạm UV để đảm bảo độ chính xác."
+                )
+                return
+
             st.success(
                 f"📍 Vị trí: ({center_lat:.4f}, {center_lon:.4f}) · "
                 f"📡 Trạm UV gần nhất: **{LOCATION_NAMES.get(loc_sel, loc_sel)}** "

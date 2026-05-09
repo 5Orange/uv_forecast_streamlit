@@ -242,7 +242,7 @@ elif active_tab == "🌍 Gợi ý hoạt động":
             with col_r:
                 radius_km = st.slider(
                     "Bán kính tìm kiếm (km)",
-                    min_value=10, max_value=80, value=30, step=5,
+                    min_value=10, max_value=50, value=30, step=5,
                     key="radius_km_slider",
                     help="Chỉ hiển thị địa điểm trong bán kính này tính từ khu vực đã chọn",
                 )

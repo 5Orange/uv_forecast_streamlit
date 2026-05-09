@@ -1,15 +1,16 @@
 import math
 
-# Fitzpatrick scale multipliers for safe sun exposure time.
-# Source: ScanSkinAI (http://www.scanskinai.com/safe-sun-exposure-time)
-# Formula: safe_minutes = (200 * multiplier) / (3 * max(1.0, uv_index))
-SKIN_TYPE_MULTIPLIER = {
-    1: 2.5,   # Type I  - Very fair, always burns, never tans
-    2: 3.0,   # Type II - Fair, usually burns, sometimes tans
-    3: 4.0,   # Type III - Medium, sometimes burns, always tans
-    4: 5.0,   # Type IV - Olive, rarely burns, always tans
-    5: 8.0,   # Type V  - Brown, very rarely burns
-    6: 15.0,  # Type VI - Dark, never burns
+# Fitzpatrick scale Minimal Erythemal Dose (MED) values in J/m^2.
+# Source: WHO (2002) Global Solar UV Index: A Practical Guide & CIE Action Spectrum
+# Formula: safe_minutes = MED_Value / (UV_Index * 1.5)
+# (1 UV Index unit = 0.025 W/m^2 = 1.5 J/(m^2*min) of erythemal irradiance)
+MED_VALUES_JM2 = {
+    1: 200.0,   # Type I  - Very fair, always burns, never tans
+    2: 250.0,   # Type II - Fair, usually burns, sometimes tans
+    3: 300.0,   # Type III - Medium, sometimes burns, always tans
+    4: 450.0,   # Type IV - Olive, rarely burns, always tans
+    5: 600.0,   # Type V  - Brown, very rarely burns
+    6: 1000.0,  # Type VI - Dark, never burns
 }
 
 # Vietnamese Fitzpatrick labels for UI
@@ -27,10 +28,9 @@ def get_safe_exposure_time(skin_type: int, uv_index: float) -> float:
     """
     Calculate safe exposure time in minutes based on Fitzpatrick skin type and UV index.
 
-    Formula: safe_minutes = (200 * multiplier) / (3 * max(1.0, uv_index))
+    Formula: safe_minutes = MED_Value / (UV_Index * 1.5)
 
-    Aligned with ScanSkinAI formula at:
-    http://www.scanskinai.com/safe-sun-exposure-time
+    Aligned with CIE (1987) Erythemal Action Spectrum and WHO (2002) MED standards.
 
     Args:
         skin_type: Fitzpatrick skin type (1-6).
@@ -42,12 +42,15 @@ def get_safe_exposure_time(skin_type: int, uv_index: float) -> float:
     Raises:
         ValueError: If skin_type is not in 1-6.
     """
-    if skin_type not in SKIN_TYPE_MULTIPLIER:
+    if skin_type not in MED_VALUES_JM2:
         raise ValueError(f"Invalid skin type: {skin_type}. Must be 1-6 (Fitzpatrick scale).")
 
-    multiplier = SKIN_TYPE_MULTIPLIER[skin_type]
-    effective_uv = max(1.0, uv_index)
-    return (200.0 * multiplier) / (3.0 * effective_uv)
+    med_value = MED_VALUES_JM2[skin_type]
+    # Cap at 480 min (8h) for negligible UV (dawn/dusk/indoor attenuation)
+    if uv_index <= 0.01:
+        return 480.0
+    # 1 UV Index = 1.5 J/(m^2 * min)
+    return min(480.0, med_value / (uv_index * 1.5))
 
 
 def validate_against_standards(skin_type: int, uv_index: float) -> dict:

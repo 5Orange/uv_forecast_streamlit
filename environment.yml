@@ -1,4 +1,4 @@
-name: uv-research
+name: uv_forecast
 channels:
   - conda-forge
   - defaults
