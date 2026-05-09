@@ -1,0 +1,1229 @@
+{
+  "scenarios": [
+    {
+      "id": "SC001",
+      "description": "Fair skin (type 2) at extreme UV noon - must go indoor",
+      "user_profile": {
+        "skin_type": 2,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "sightseeing"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-07-15T12:00:00",
+        "uv_forecast": 11,
+        "temperature": 35,
+        "weather_condition": "sunny",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "observation_deck",
+          "historical_site",
+          "indoor_attraction",
+          "market",
+          "river_side"
+        ],
+        "should_avoid": [
+          "coastal_beach",
+          "urban_park",
+          "nature_spot"
+        ],
+        "min_safe_hours_pct": 0,
+        "explanation": "UV=11 extreme. Indoor glass blocks 95%% UV (Tuchinda 2006). Indoor places score 1.0 vs outdoor <<1.0"
+      },
+      "expected_metrics": {
+        "target_precision": 0.6,
+        "target_recall": 0.5
+      }
+    },
+    {
+      "id": "SC002",
+      "description": "Dark skin (type 6) at low UV morning - indoor+outdoor both valid; system safety-first picks indoor",
+      "user_profile": {
+        "skin_type": 6,
+        "activity_duration_minutes": 90,
+        "preferences": [
+          "beach",
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "vungtau",
+        "lat": 10.4113,
+        "lon": 107.1365,
+        "timestamp": "2025-07-15T07:00:00",
+        "uv_forecast": 2,
+        "temperature": 28,
+        "weather_condition": "partly_cloudy",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "outdoor_attraction",
+          "coastal_beach"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 50,
+        "explanation": "UV=2 + skin 6: all places safe. Outdoor parks appear first."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC003",
+      "description": "Moderate UV + olive skin - indoor preferred, shaded outdoor acceptable",
+      "user_profile": {
+        "skin_type": 4,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "sightseeing",
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-06-10T10:00:00",
+        "uv_forecast": 5,
+        "temperature": 31,
+        "weather_condition": "partly_cloudy",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "outdoor_attraction",
+          "historical_site"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 20,
+        "explanation": "UV=5 moderate + skin 4: well-shaded outdoor safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC004",
+      "description": "Rain + outdoor preference - covered/indoor places should win",
+      "user_profile": {
+        "skin_type": 3,
+        "activity_duration_minutes": 45,
+        "preferences": [
+          "walking",
+          "sightseeing"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-09-01T14:00:00",
+        "uv_forecast": 4,
+        "temperature": 27,
+        "weather_condition": "rainy",
+        "is_raining": true
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "observation_deck",
+          "historical_site",
+          "indoor_attraction",
+          "market",
+          "river_side"
+        ],
+        "should_avoid": [
+          "coastal_beach",
+          "urban_park"
+        ],
+        "min_safe_hours_pct": 20,
+        "explanation": "Rain: outdoor rain_modifier=0.3. Indoor unaffected."
+      },
+      "expected_metrics": {
+        "target_precision": 0.6,
+        "target_recall": 0.5
+      }
+    },
+    {
+      "id": "SC005",
+      "description": "Heat warning (39°C) + beach activity - conflicting factors",
+      "user_profile": {
+        "skin_type": 3,
+        "activity_duration_minutes": 120,
+        "preferences": [
+          "beach"
+        ]
+      },
+      "context": {
+        "location_id": "vungtau",
+        "lat": 10.4113,
+        "lon": 107.1365,
+        "timestamp": "2025-07-20T13:00:00",
+        "uv_forecast": 9,
+        "temperature": 39,
+        "weather_condition": "sunny",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "observation_deck",
+          "historical_site",
+          "indoor_attraction",
+          "market",
+          "river_side"
+        ],
+        "should_avoid": [
+          "coastal_beach"
+        ],
+        "min_safe_hours_pct": 0,
+        "explanation": "UV=9 + 39C: thermal_modifier=0.5 halves outdoor scores. Indoor fully protected."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC007",
+      "description": "Very fair skin (type 1) at high UV - strict indoor only",
+      "user_profile": {
+        "skin_type": 1,
+        "activity_duration_minutes": 30,
+        "preferences": [
+          "sightseeing"
+        ]
+      },
+      "context": {
+        "location_id": "cangio",
+        "lat": 10.4114,
+        "lon": 106.9547,
+        "timestamp": "2025-07-15T11:00:00",
+        "uv_forecast": 10,
+        "temperature": 33,
+        "weather_condition": "sunny",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "observation_deck",
+          "historical_site",
+          "indoor_attraction",
+          "river_side"
+        ],
+        "should_avoid": [
+          "coastal_beach"
+        ],
+        "min_safe_hours_pct": 0,
+        "explanation": "UV=10 + skin 1 (MED=200). Outdoor safe_time < 30min activity."
+      },
+      "expected_metrics": {
+        "target_precision": 0.6,
+        "target_recall": 0.5
+      }
+    },
+    {
+      "id": "SC008",
+      "description": "Low UV evening - indoor+outdoor both safe; indoor_bonus still ranks indoor first",
+      "user_profile": {
+        "skin_type": 2,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "walking",
+          "sightseeing"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-06-10T17:00:00",
+        "uv_forecast": 1,
+        "temperature": 29,
+        "weather_condition": "clear",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "outdoor_attraction",
+          "historical_site"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 60,
+        "explanation": "UV=1 negligible. All places equally safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.6,
+        "target_recall": 0.5
+      }
+    },
+    {
+      "id": "SC009",
+      "description": "Brown skin type 5 at moderate UV - system safety-first: indoor+outdoor_attraction ranked higher",
+      "user_profile": {
+        "skin_type": 5,
+        "activity_duration_minutes": 90,
+        "preferences": [
+          "picnic",
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "thuduc",
+        "lat": 10.8506,
+        "lon": 106.771,
+        "timestamp": "2025-05-20T09:00:00",
+        "uv_forecast": 5,
+        "temperature": 30,
+        "weather_condition": "partly_cloudy",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "outdoor_attraction",
+          "historical_site"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 10,
+        "explanation": "UV=5 + skin 5: safe for shaded places."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC010",
+      "description": "Distance trade-off: far but safe (indoor) vs near but risky (beach)",
+      "user_profile": {
+        "skin_type": 2,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "beach"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-08-01T12:00:00",
+        "uv_forecast": 9,
+        "temperature": 34,
+        "weather_condition": "sunny",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "observation_deck",
+          "historical_site",
+          "indoor_attraction",
+          "market",
+          "river_side"
+        ],
+        "should_avoid": [
+          "coastal_beach"
+        ],
+        "min_safe_hours_pct": 0,
+        "explanation": "UV=9, skin 2 (MED=250). Indoor preferred."
+      },
+      "expected_metrics": {
+        "target_precision": 0.6,
+        "target_recall": 0.5
+      }
+    },
+    {
+      "id": "SC011",
+      "description": "Skin type 3 at UV=7 (High) - mixed indoor/shaded outdoor",
+      "user_profile": {
+        "skin_type": 3,
+        "activity_duration_minutes": 45,
+        "preferences": [
+          "sightseeing"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-06-15T11:00:00",
+        "uv_forecast": 7,
+        "temperature": 32,
+        "weather_condition": "sunny",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "historical_site"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 10,
+        "explanation": "UV=7 High but well-shaded outdoor still safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC013",
+      "description": "Can Gio mangrove - eco tourism; indoor_bonus ranks indoor higher",
+      "user_profile": {
+        "skin_type": 4,
+        "activity_duration_minutes": 120,
+        "preferences": [
+          "eco_tourism",
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "cangio",
+        "lat": 10.4114,
+        "lon": 106.9547,
+        "timestamp": "2025-03-10T08:00:00",
+        "uv_forecast": 4,
+        "temperature": 28,
+        "weather_condition": "partly_cloudy",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "eco_park",
+          "nature_spot"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 10,
+        "explanation": "UV=4 moderate + skin 4: shaded outdoor safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC014",
+      "description": "Type 1 at UV=3 - short walk; indoor_bonus tips balance toward indoor",
+      "user_profile": {
+        "skin_type": 1,
+        "activity_duration_minutes": 15,
+        "preferences": [
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "nhabe",
+        "lat": 10.694,
+        "lon": 106.736,
+        "timestamp": "2025-04-10T08:00:00",
+        "uv_forecast": 3,
+        "temperature": 27,
+        "weather_condition": "partly_cloudy",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "outdoor_attraction",
+          "historical_site"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 20,
+        "explanation": "UV=3 + 15min: even skin 1 safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC015",
+      "description": "Heavy rain + UV=6 - all outdoor scored low",
+      "user_profile": {
+        "skin_type": 3,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "sightseeing"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-10-05T15:00:00",
+        "uv_forecast": 6,
+        "temperature": 26,
+        "weather_condition": "heavy_rain",
+        "is_raining": true
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "observation_deck",
+          "historical_site",
+          "indoor_attraction",
+          "market",
+          "river_side"
+        ],
+        "should_avoid": [
+          "urban_park",
+          "coastal_beach",
+          "nature_spot"
+        ],
+        "min_safe_hours_pct": 0,
+        "explanation": "Heavy rain + UV=6: outdoor gets 0.3 penalty. Indoor dominates."
+      },
+      "expected_metrics": {
+        "target_precision": 0.7,
+        "target_recall": 0.6
+      }
+    },
+    {
+      "id": "SC016",
+      "description": "Skin type 6 at UV=12 extreme - even dark skin needs shelter",
+      "user_profile": {
+        "skin_type": 6,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "beach"
+        ]
+      },
+      "context": {
+        "location_id": "longhai",
+        "lat": 10.407,
+        "lon": 107.243,
+        "timestamp": "2025-07-15T13:00:00",
+        "uv_forecast": 12,
+        "temperature": 36,
+        "weather_condition": "sunny",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "observation_deck",
+          "historical_site",
+          "indoor_attraction",
+          "market",
+          "river_side"
+        ],
+        "should_avoid": [
+          "coastal_beach"
+        ],
+        "min_safe_hours_pct": 0,
+        "explanation": "UV=12 extreme + 36C heat. Indoor mandatory."
+      },
+      "expected_metrics": {
+        "target_precision": 0.6,
+        "target_recall": 0.5
+      }
+    },
+    {
+      "id": "SC017",
+      "description": "Low UV + type 3 + long activity - indoor_bonus prevails; outdoor secondary",
+      "user_profile": {
+        "skin_type": 3,
+        "activity_duration_minutes": 180,
+        "preferences": [
+          "picnic",
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "cuchi",
+        "lat": 11.002,
+        "lon": 106.509,
+        "timestamp": "2025-01-15T07:30:00",
+        "uv_forecast": 2,
+        "temperature": 26,
+        "weather_condition": "clear",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "outdoor_attraction",
+          "forest"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 8,
+        "explanation": "UV=2 low: outdoor safe even for 180min."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC018",
+      "description": "Very high UV + type 4 + heat - prioritise indoor AC places",
+      "user_profile": {
+        "skin_type": 4,
+        "activity_duration_minutes": 90,
+        "preferences": [
+          "sightseeing"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-06-20T12:30:00",
+        "uv_forecast": 10,
+        "temperature": 38,
+        "weather_condition": "sunny",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "observation_deck",
+          "historical_site",
+          "indoor_attraction",
+          "market",
+          "river_side"
+        ],
+        "should_avoid": [
+          "urban_park",
+          "coastal_beach"
+        ],
+        "min_safe_hours_pct": 0,
+        "explanation": "UV=10 + 38C: thermal_modifier=0.5. Indoor mandatory."
+      },
+      "expected_metrics": {
+        "target_precision": 0.7,
+        "target_recall": 0.6
+      }
+    },
+    {
+      "id": "SC019",
+      "description": "UV=0 (night/dawn) - edge case; indoor_bonus still applies",
+      "user_profile": {
+        "skin_type": 2,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-06-10T05:00:00",
+        "uv_forecast": 0,
+        "temperature": 24,
+        "weather_condition": "clear",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "outdoor_attraction",
+          "historical_site"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 30,
+        "explanation": "UV=0 (night). No UV risk."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC020",
+      "description": "Type 2 + moderate UV + short activity (20 min) - indoor preferred",
+      "user_profile": {
+        "skin_type": 2,
+        "activity_duration_minutes": 20,
+        "preferences": [
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-04-20T09:00:00",
+        "uv_forecast": 4,
+        "temperature": 30,
+        "weather_condition": "partly_cloudy",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "outdoor_attraction",
+          "historical_site"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 20,
+        "explanation": "UV=4 + 20min: all safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC021",
+      "description": "Vung Tau beach - clear morning, type 5 - indoor_bonus ranks indoor first",
+      "user_profile": {
+        "skin_type": 5,
+        "activity_duration_minutes": 120,
+        "preferences": [
+          "beach"
+        ]
+      },
+      "context": {
+        "location_id": "vungtau",
+        "lat": 10.4113,
+        "lon": 107.1365,
+        "timestamp": "2025-12-20T08:00:00",
+        "uv_forecast": 3,
+        "temperature": 27,
+        "weather_condition": "clear",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "coastal_beach",
+          "outdoor_attraction"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 15,
+        "explanation": "UV=3 + skin 5: all outdoor safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC022",
+      "description": "Type 3 afternoon UV peak - rapid score drop for outdoor",
+      "user_profile": {
+        "skin_type": 3,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "sightseeing"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-07-10T13:00:00",
+        "uv_forecast": 8,
+        "temperature": 34,
+        "weather_condition": "sunny",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "observation_deck",
+          "historical_site",
+          "indoor_attraction",
+          "market",
+          "river_side"
+        ],
+        "should_avoid": [
+          "urban_park",
+          "coastal_beach"
+        ],
+        "min_safe_hours_pct": 0,
+        "explanation": "UV=8 Very High. Indoor glass reduces effective UV to 0.4."
+      },
+      "expected_metrics": {
+        "target_precision": 0.6,
+        "target_recall": 0.5
+      }
+    },
+    {
+      "id": "SC023",
+      "description": "Type 4 at UV=6 - indoor_bonus keeps indoor above outdoor",
+      "user_profile": {
+        "skin_type": 4,
+        "activity_duration_minutes": 45,
+        "preferences": [
+          "picnic"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-05-01T10:00:00",
+        "uv_forecast": 6,
+        "temperature": 31,
+        "weather_condition": "partly_cloudy",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "historical_site"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 10,
+        "explanation": "UV=6 + skin 4: shaded outdoor safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC024",
+      "description": "Rainy + UV=2 - rain penalty makes indoor preferred",
+      "user_profile": {
+        "skin_type": 5,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "nhabe",
+        "lat": 10.694,
+        "lon": 106.736,
+        "timestamp": "2025-09-20T10:00:00",
+        "uv_forecast": 2,
+        "temperature": 26,
+        "weather_condition": "rainy",
+        "is_raining": true
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "observation_deck",
+          "historical_site",
+          "indoor_attraction",
+          "market",
+          "river_side"
+        ],
+        "should_avoid": [
+          "urban_park",
+          "coastal_beach"
+        ],
+        "min_safe_hours_pct": 20,
+        "explanation": "Rain at UV=2: outdoor safe but wet (0.3 modifier). Indoor preferred."
+      },
+      "expected_metrics": {
+        "target_precision": 0.6,
+        "target_recall": 0.5
+      }
+    },
+    {
+      "id": "SC025",
+      "description": "Long Hai beach - type 6 at UV=5 long activity - indoor_bonus still first",
+      "user_profile": {
+        "skin_type": 6,
+        "activity_duration_minutes": 180,
+        "preferences": [
+          "beach"
+        ]
+      },
+      "context": {
+        "location_id": "longhai",
+        "lat": 10.407,
+        "lon": 107.243,
+        "timestamp": "2025-03-05T09:00:00",
+        "uv_forecast": 5,
+        "temperature": 29,
+        "weather_condition": "partly_cloudy",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "observation_deck",
+          "coastal_beach",
+          "outdoor_attraction"
+        ],
+        "should_avoid": [],
+        "min_safe_hours_pct": 10,
+        "explanation": "UV=5 + skin 6: all safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.5,
+        "target_recall": 0.4
+      }
+    },
+    {
+      "id": "SC026",
+      "description": "UV=0 night walk — outdoor parks should rank high, not just indoor",
+      "user_profile": {
+        "skin_type": 3,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-06-10T19:00:00",
+        "uv_forecast": 0,
+        "temperature": 27,
+        "weather_condition": "clear",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "outdoor_attraction",
+          "garden",
+          "river_side"
+        ],
+        "should_avoid": [],
+        "explanation": "UV=0 at night — zero UV risk. Outdoor parks and attractions should rank high for walking."
+      },
+      "expected_metrics": {
+        "target_precision": 0.8,
+        "target_recall": 0.8
+      }
+    },
+    {
+      "id": "SC027",
+      "description": "Dark skin type 6 at UV=1 — beach should be safe and recommended",
+      "user_profile": {
+        "skin_type": 6,
+        "activity_duration_minutes": 120,
+        "preferences": [
+          "beach"
+        ]
+      },
+      "context": {
+        "location_id": "vungtau",
+        "lat": 10.4113,
+        "lon": 107.1365,
+        "timestamp": "2025-12-20T07:00:00",
+        "uv_forecast": 1,
+        "temperature": 26,
+        "weather_condition": "clear",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "coastal_beach"
+        ],
+        "should_avoid": [],
+        "explanation": "UV=1, skin type 6 safe_time=100min >> 120min activity. Beach is perfectly safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.2,
+        "target_recall": 1.0
+      }
+    },
+    {
+      "id": "SC028",
+      "description": "Moderate UV, diverse preferences — expect diverse types in top-5",
+      "user_profile": {
+        "skin_type": 4,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "sightseeing",
+          "walking",
+          "nature"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-05-10T09:00:00",
+        "uv_forecast": 4,
+        "temperature": 30,
+        "weather_condition": "partly_cloudy",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "nature_spot",
+          "religious_site",
+          "historical_site",
+          "eco_park"
+        ],
+        "should_avoid": [],
+        "explanation": "Moderate UV with olive skin — many place types are safe. System should show diverse recommendations."
+      },
+      "expected_metrics": {
+        "target_precision": 0.8,
+        "target_recall": 0.8
+      }
+    },
+    {
+      "id": "SC029",
+      "description": "Well-shaded parks should rank high at moderate UV — shade quality matters",
+      "user_profile": {
+        "skin_type": 5,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "picnic",
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-04-15T08:00:00",
+        "uv_forecast": 3,
+        "temperature": 28,
+        "weather_condition": "clear",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "garden",
+          "eco_park"
+        ],
+        "should_avoid": [],
+        "explanation": "UV=3 moderate, skin 5 safe_time=18min. Well-shaded parks (70-80% shade) are appropriate."
+      },
+      "expected_metrics": {
+        "target_precision": 0.8,
+        "target_recall": 0.8
+      }
+    },
+    {
+      "id": "SC030",
+      "description": "Eco-tourism at Can Gio — nature_spot and eco_park must appear",
+      "user_profile": {
+        "skin_type": 4,
+        "activity_duration_minutes": 90,
+        "preferences": [
+          "eco_tourism",
+          "nature"
+        ]
+      },
+      "context": {
+        "location_id": "cangio",
+        "lat": 10.4114,
+        "lon": 106.9547,
+        "timestamp": "2025-02-15T07:30:00",
+        "uv_forecast": 2,
+        "temperature": 26,
+        "weather_condition": "partly_cloudy",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "eco_park",
+          "nature_spot",
+          "forest"
+        ],
+        "should_avoid": [],
+        "explanation": "UV=2 low risk at Can Gio. Eco-tourism types should dominate for this user profile."
+      },
+      "expected_metrics": {
+        "target_precision": 0.4,
+        "target_recall": 0.6
+      }
+    },
+    {
+      "id": "SC031",
+      "description": "Low UV but extreme heat 40°C — heat penalty should dominate scoring",
+      "user_profile": {
+        "skin_type": 3,
+        "activity_duration_minutes": 60,
+        "preferences": [
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "cuchi",
+        "lat": 11.002,
+        "lon": 106.509,
+        "timestamp": "2025-04-20T14:00:00",
+        "uv_forecast": 3,
+        "temperature": 40,
+        "weather_condition": "sunny",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "indoor_attraction",
+          "historical_site"
+        ],
+        "should_avoid": [
+          "urban_park",
+          "nature_spot",
+          "coastal_beach",
+          "eco_park"
+        ],
+        "explanation": "UV=3 is moderate but 40°C is dangerous. Outdoor without shade must be penalized."
+      },
+      "expected_metrics": {
+        "target_precision": 0.8,
+        "target_recall": 0.5
+      }
+    },
+    {
+      "id": "SC032",
+      "description": "Cultural visit — religious_site should appear in top-5",
+      "user_profile": {
+        "skin_type": 3,
+        "activity_duration_minutes": 45,
+        "preferences": [
+          "culture",
+          "temple"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-02-01T09:00:00",
+        "uv_forecast": 4,
+        "temperature": 29,
+        "weather_condition": "clear",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "religious_site"
+        ],
+        "should_avoid": [],
+        "explanation": "User wants temple/culture. religious_site (7/8 indoor) should appear. Narrow ground truth makes it harder to pass."
+      },
+      "expected_metrics": {
+        "target_precision": 0.2,
+        "target_recall": 1.0
+      }
+    },
+    {
+      "id": "SC033",
+      "description": "Very short activity at high UV — boundary case for safe_ratio",
+      "user_profile": {
+        "skin_type": 5,
+        "activity_duration_minutes": 10,
+        "preferences": [
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-07-10T12:00:00",
+        "uv_forecast": 8,
+        "temperature": 33,
+        "weather_condition": "sunny",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "outdoor_attraction"
+        ],
+        "should_avoid": [],
+        "explanation": "Skin 5 at UV=8: safe_time = (200*8)/(3*8) = 66.7 min >> 10 min. safe_ratio=1.0. Outdoor should be safe."
+      },
+      "expected_metrics": {
+        "target_precision": 0.6,
+        "target_recall": 0.5
+      }
+    },
+    {
+      "id": "SC034",
+      "description": "Perfect outdoor conditions — ONLY outdoor types should be recommended",
+      "user_profile": {
+        "skin_type": 6,
+        "activity_duration_minutes": 30,
+        "preferences": [
+          "beach",
+          "nature",
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "vungtau",
+        "lat": 10.4113,
+        "lon": 107.1365,
+        "timestamp": "2025-12-15T07:00:00",
+        "uv_forecast": 1,
+        "temperature": 25,
+        "weather_condition": "clear",
+        "is_raining": false
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "coastal_beach",
+          "nature_spot",
+          "outdoor_attraction",
+          "urban_park",
+          "eco_park"
+        ],
+        "should_avoid": [
+          "indoor_attraction"
+        ],
+        "explanation": "UV=1, skin 6, pleasant weather, short activity. ALL outdoor types are safe. Indoor should NOT dominate."
+      },
+      "expected_metrics": {
+        "target_precision": 0.8,
+        "target_recall": 0.8
+      }
+    },
+    {
+      "id": "SC035",
+      "description": "Light rain + outdoor with shade — shaded outdoor should still rank OK",
+      "user_profile": {
+        "skin_type": 4,
+        "activity_duration_minutes": 45,
+        "preferences": [
+          "walking"
+        ]
+      },
+      "context": {
+        "location_id": "hcm",
+        "lat": 10.7769,
+        "lon": 106.7009,
+        "timestamp": "2025-09-15T10:00:00",
+        "uv_forecast": 3,
+        "temperature": 27,
+        "weather_condition": "rainy",
+        "is_raining": true
+      },
+      "ground_truth": {
+        "should_recommend": [
+          "urban_park",
+          "religious_site",
+          "historical_site"
+        ],
+        "should_avoid": [
+          "coastal_beach"
+        ],
+        "explanation": "Light rain at low UV. Urban parks with high shade and covered religious sites should still appear."
+      },
+      "expected_metrics": {
+        "target_precision": 0.6,
+        "target_recall": 0.6
+      }
+    }
+  ]
+}
