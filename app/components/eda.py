@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app.utils.data_loader import LOCATION_COLORS, LOCATION_NAMES, UV_CATEGORY_COLORS
+from config import FINAL_FEATURES
 
 
 def render(df: pd.DataFrame, selected_locs: list[str]):
@@ -180,11 +181,7 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
 
     # -- 7. Correlation heatmap --------------------------------------------
     st.subheader("Ma trận tương quan đặc trưng")
-    key_feats = [
-        "cos_solar_zenith", "doy_sin", "temperature_2m", "relative_humidity_2m",
-        "cloud_cover", "solar_cloud_interaction", "ozone_anomaly",
-        "pressure_msl", "wind_speed_10m", "altitude_m",
-    ]
+    key_feats = FINAL_FEATURES
     avail_feats = [f for f in key_feats if f in data.columns] + ["uv_index"]
     if len(avail_feats) > 2:
         corr = data[avail_feats].corr()
@@ -196,7 +193,7 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
             labels=dict(color="Hệ số tương quan"),
             title="Ma trận tương quan (các đặc trưng chính vs UV Index)",
         )
-        fig_corr.update_layout(height=500)
+        fig_corr.update_layout(height=1000)
         st.plotly_chart(fig_corr, width='stretch')
 
     # -- 8. Feature scatter ------------------------------------------------

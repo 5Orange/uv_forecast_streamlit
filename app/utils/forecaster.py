@@ -219,8 +219,6 @@ def _compute_all_features(df: pd.DataFrame, loc_id: str, loc: dict,
 
     df["altitude_solar_interaction"] = df["altitude_m"] * df["cos_solar_zenith"] / 1000
 
-    df["is_highland"] = (df["altitude_m"] > 500).astype(int)
-
     ozone_val = df.get("ozone", pd.Series(np.nan, index=df.index)).fillna(70)
     df["ozone_depletion_risk"] = (ozone_val < _OZONE_Q25).astype(int)
 

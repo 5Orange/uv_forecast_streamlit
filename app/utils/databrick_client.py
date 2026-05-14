@@ -13,7 +13,7 @@ _ROUTER_SCHEMA_COLS = [
     'cloud_cover', 'solar_cloud_interaction', 'ozone_anomaly', 'pressure_msl',
     'wind_speed_10m', 'altitude_m', 'cos_zenith_squared', 'cloud_attenuation_exp',
     'temp_humidity_product', 'pressure_cloud_interaction', 'temperature_2m_ema',
-    'cloud_cover_ema', 'ozone_ema', 'altitude_solar_interaction', 'is_highland',
+    'cloud_cover_ema', 'ozone_ema', 'altitude_solar_interaction',
     'ozone_depletion_risk', 'air_quality_combined', 'is_raining', 'cloud_cover_change_1h'
 ]
 

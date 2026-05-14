@@ -22,6 +22,8 @@ from app.utils.data_loader import (
     get_available_models,
 )
 
+from config import FINAL_FEATURES
+
 SKIN_OPTIONS = {
     1: "1 - Rất trắng, dễ cháy nắng",
     2: "2 - Trắng, dễ cháy",
@@ -113,7 +115,7 @@ if active_tab == "🏠 Tổng quan":
 #### 🔑 Quyết định thiết kế chính
 - **Regression-only inference:** Mô hình dự báo chỉ số UV liên tục
 - **Danh mục UV** suy ra từ ngưỡng WHO chuẩn
-- **23 đặc trưng tối ưu** qua phân tích đa cộng tuyến + Optuna tuning
+- **22 đặc trưng tối ưu** qua phân tích đa cộng tuyến + Optuna tuning
 - **Phân chia thời gian** (70/15/15) để tránh data leakage
 - **Lọc ban đêm:** `solar_elevation <= 0 -> UV = 0`
 - **Dự báo thực tế** qua Open-Meteo API (không dùng dữ liệu giả)
@@ -132,7 +134,7 @@ Air Quality (Ozone, Aerosol) ----┘      - pvlib Solar Position (zenith, elevat
                                                   |
                                                   v
                                        [ Feature Engineering ]
-                                        - 23 Core Features (Temporal, Solar, Atmospheric, Lag)
+                                        - 22 Core Features (Temporal, Solar, Atmospheric, Lag)
                                         - Health Features (Fitzpatrick Safe Exposure, Risk)
                                         - Tourism Features (Beach & Outdoor Suitability)
                                                   |
@@ -152,37 +154,42 @@ Air Quality (Ozone, Aerosol) ----┘      - pvlib Solar Position (zenith, elevat
 ```
     """)
 
-        st.subheader("Chi tiết 23 Đặc trưng Cốt lõi (Feature Engineering)")
+        st.subheader("Chi tiết đặc trưng regression cốt lõi")
+        st.info("Danh sách là các features dùng trực tiếp để train/inference regression. UV lag/rolling bị loại để tránh data leakage.")
         import pandas as pd
-        features_data = [
-            {"Nhóm": "1. Thời gian (Temporal)", "Đặc trưng": "hour_sin, hour_cos", "Ý nghĩa": "Chu kỳ giờ trong ngày (hình sin/cos)"},
-            {"Nhóm": "1. Thời gian (Temporal)", "Đặc trưng": "month_sin, month_cos", "Ý nghĩa": "Chu kỳ tháng trong năm"},
-            {"Nhóm": "1. Thời gian (Temporal)", "Đặc trưng": "doy_sin, doy_cos", "Ý nghĩa": "Chu kỳ ngày trong năm (Day of Year)"},
-            {"Nhóm": "1. Thời gian (Temporal)", "Đặc trưng": "day_fraction", "Ý nghĩa": "Tỷ lệ thời gian ban ngày đã trôi qua"},
-            {"Nhóm": "1. Thời gian (Temporal)", "Đặc trưng": "hours_since_sunrise", "Ý nghĩa": "Số giờ tính từ lúc mặt trời mọc"},
-            
-            {"Nhóm": "2. Bức xạ & Mặt trời (Solar)", "Đặc trưng": "cos_solar_zenith", "Ý nghĩa": "Cosin góc thiên đỉnh (Quyết định cường độ bức xạ)"},
-            {"Nhóm": "2. Bức xạ & Mặt trời (Solar)", "Đặc trưng": "solar_elevation", "Ý nghĩa": "Góc cao mặt trời so với chân trời"},
-            {"Nhóm": "2. Bức xạ & Mặt trời (Solar)", "Đặc trưng": "air_mass", "Ý nghĩa": "Khối lượng không khí tia sáng xuyên qua"},
-            {"Nhóm": "2. Bức xạ & Mặt trời (Solar)", "Đặc trưng": "clearness_index", "Ý nghĩa": "Độ trong suốt của bầu trời"},
-            {"Nhóm": "2. Bức xạ & Mặt trời (Solar)", "Đặc trưng": "solar_cloud_interaction", "Ý nghĩa": "Tương tác: Vị trí mặt trời × Độ che phủ mây"},
-            
-            {"Nhóm": "3. Khí quyển (Atmospheric)", "Đặc trưng": "temperature_2m", "Ý nghĩa": "Nhiệt độ không khí"},
-            {"Nhóm": "3. Khí quyển (Atmospheric)", "Đặc trưng": "relative_humidity_2m", "Ý nghĩa": "Độ ẩm tương đối"},
-            {"Nhóm": "3. Khí quyển (Atmospheric)", "Đặc trưng": "cloud_opacity", "Ý nghĩa": "Độ đục của mây (có trọng số theo tầng mây)"},
-            {"Nhóm": "3. Khí quyển (Atmospheric)", "Đặc trưng": "ozone_anomaly", "Ý nghĩa": "Độ lệch hàm lượng Ozone so với TBN tháng"},
-            {"Nhóm": "3. Khí quyển (Atmospheric)", "Đặc trưng": "aerosol_uv_attenuation", "Ý nghĩa": "Độ suy giảm UV do bụi mịn/khói (AOD)"},
-            
-            {"Nhóm": "4. Chuỗi thời gian (Time-Series)", "Đặc trưng": "uv_lag_1h", "Ý nghĩa": "Chỉ số UV của 1 giờ trước"},
-            {"Nhóm": "4. Chuỗi thời gian (Time-Series)", "Đặc trưng": "uv_lag_24h", "Ý nghĩa": "Chỉ số UV cùng giờ ngày hôm qua"},
-            {"Nhóm": "4. Chuỗi thời gian (Time-Series)", "Đặc trưng": "uv_rolling_mean_3h", "Ý nghĩa": "Trung bình UV trong 3 giờ gần nhất"},
-            {"Nhóm": "4. Chuỗi thời gian (Time-Series)", "Đặc trưng": "uv_diff_1h", "Ý nghĩa": "Tốc độ thay đổi UV so với giờ trước"},
-            {"Nhóm": "4. Chuỗi thời gian (Time-Series)", "Đặc trưng": "cloud_cover_change_1h", "Ý nghĩa": "Mức độ biến thiên che phủ mây (1h)"},
-        ]
+        feature_meta = {
+            "cos_solar_zenith": ("1. Solar Geometry", "cos(zenith)", "Cosin góc thiên đỉnh, yếu tố vật lý quan trọng nhất của UV."),
+            "doy_sin": ("1. Solar Geometry", "sin(2pi*doy/365)", "Mùa vụ theo chu kỳ năm."),
+            "temperature_2m": ("2. Atmospheric Base", "raw", "Nhiệt độ không khí tại 2m."),
+            "relative_humidity_2m": ("2. Atmospheric Base", "raw", "Độ ẩm tương đối tại 2m."),
+            "cloud_cover": ("2. Atmospheric Base", "raw", "Độ che phủ mây tổng."),
+            "solar_cloud_interaction": ("3. Interaction", "cos_solar_zenith*(1-cloud_cover)", "Tương tác vị trí mặt trời và mây"),
+            "ozone_anomaly": ("2. Atmospheric Base", "ozone-monthly_baseline", "Độ lệch ozone so với trung bình tháng"),
+            "pressure_msl": ("2. Atmospheric Base", "raw", "Áp suất mực nước biển"),
+            "wind_speed_10m": ("2. Atmospheric Base", "raw", "Tốc độ gió 10m."),
+            "altitude_m": ("4. Spatial", "location metadata", "Độ cao địa điểm."),
+            "cos_zenith_squared": ("5. Nonlinear", "cos_solar_zenith^2", "Thành phần phi tuyến của góc thiên đỉnh."),
+            "cloud_attenuation_exp": ("5. Nonlinear", "exp(-cloud_cover/100)", "Suy giảm UV theo mây dạng mũ"),
+            "temp_humidity_product": ("3. Interaction", "temperature_2m*relative_humidity_2m", "Tương tác nhiệt độ-độ ẩm."),
+            "pressure_cloud_interaction": ("3. Interaction", "pressure_msl*(1-cloud_cover/100)", "Tương tác áp suất và mây."),
+            "temperature_2m_ema": ("6. Smoothed Trend", "EMA(alpha=0.3)", "Xu hương mượt nhiệt độ."),
+            "cloud_cover_ema": ("6. Smoothed Trend", "EMA(alpha=0.3)", "Xu hướng mượt độ che mây."),
+            "ozone_ema": ("6. Smoothed Trend", "EMA(alpha=0.3)", "Xu hướng mượt ozone."),
+            "altitude_solar_interaction": ("3. Interaction", "altitude_m*cos_solar_zenith/1000", "Hiệu ứng độ cao theo vị trí mặt trời."),
+            "ozone_depletion_risk": ("7. Binary Indicator", "(ozone<Q25).astype(int)", "Cờ rủi ro suy giảm ozone."),
+            "air_quality_combined": ("7. Binary Indicator", "normalized air-quality blend", "Chỉ báo chất lượng không khí tổng hợp."),
+            "is_raining": ("7. Binary Indicator", "(precipitation>0).astype(int)", "Cờ đang mưa."),
+            "cloud_cover_change_1h": ("8. Momentum", "cloud_cover.diff(1)", "Biến thiên mây theo giờ."),
+        }
+        features_data = []
+        for feat in FINAL_FEATURES:
+            group, formula, meaning = feature_meta.get(feat, ("Unknown", "-", "Chua co mo ta"))
+            features_data.append({"Nhom": group, "Dac Trung": feat, "Cong Thuc": formula, "Y nghia": meaning})
         df_features = pd.DataFrame(features_data)
         for group_name, group_df in df_features.groupby("Nhóm", sort=False):
-            with st.expander(f"🔍 {group_name}"):
-                st.dataframe(group_df[["Đặc trưng", "Ý nghĩa"]], width='stretch', hide_index=True)
+            with st.expander(f"🔍 {group_name} ({len(group_df)} features)"):
+                st.dataframe(group_df[["Đặc trưng", "Cong thuc", "Ý nghĩa"]], width='stretch', hide_index=True)
+        st.caption(f"tong so feature dang dung: {len(FINAL_FEATURES)}")
 
 elif active_tab == "📊 Phân tích dữ liệu":
     with main_content.container():
