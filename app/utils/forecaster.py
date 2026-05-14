@@ -15,7 +15,7 @@ import pvlib
 import requests
 import streamlit as st
 
-from config import LOCATIONS, TIMEZONE, UV_CATEGORY_BINS, FINAL_23_FEATURES
+from config import LOCATIONS, TIMEZONE, UV_CATEGORY_BINS, FINAL_22_FEATURES
 from app.utils.databrick_client import DataBrickModelClient
 
 def _get_model_type(model_name: str) -> str:
@@ -362,7 +362,7 @@ def get_live_forecast(
         st.error(f"Không thể tải mô hình '{regression_model}'. Dự báo không khả dụng.")
         return pd.DataFrame()
 
-    feat_cols = list(FINAL_23_FEATURES)
+    feat_cols = list(FINAL_22_FEATURES)
     ozone_means = _get_ozone_monthly_means()
     all_frames = []
 

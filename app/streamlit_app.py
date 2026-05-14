@@ -184,11 +184,11 @@ Air Quality (Ozone, Aerosol) ----┘      - pvlib Solar Position (zenith, elevat
         features_data = []
         for feat in FINAL_FEATURES:
             group, formula, meaning = feature_meta.get(feat, ("Unknown", "-", "Chua co mo ta"))
-            features_data.append({"Nhom": group, "Dac Trung": feat, "Cong Thuc": formula, "Y nghia": meaning})
+            features_data.append({"Nhóm": group, "Đặc trưng": feat, "Công thức": formula, "Ý nghĩa": meaning})
         df_features = pd.DataFrame(features_data)
         for group_name, group_df in df_features.groupby("Nhóm", sort=False):
             with st.expander(f"🔍 {group_name} ({len(group_df)} features)"):
-                st.dataframe(group_df[["Đặc trưng", "Cong thuc", "Ý nghĩa"]], width='stretch', hide_index=True)
+                st.dataframe(group_df[["Đặc trưng", "Công thức", "Ý nghĩa"]], width='stretch', hide_index=True)
         st.caption(f"tong so feature dang dung: {len(FINAL_FEATURES)}")
 
 elif active_tab == "📊 Phân tích dữ liệu":
