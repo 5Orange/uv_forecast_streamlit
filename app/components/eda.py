@@ -209,31 +209,6 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
                 fig_corr.update_layout(height=1000)
                 st.plotly_chart(fig_corr, width='stretch')
 
-    # -- 8. Feature scatter ------------------------------------------------
-    st.subheader("Tương quan đặc trưng vs UV Index")
-    scatter_feats = [f for f in key_feats if f in data.columns]
-
-    valid_scatter_feats = []
-    for feat in scatter_feats:
-        if data[feat].nunique() > 1 and data[feat].notna().sum() > 10:
-            valid_scatter_feats.append(feat)
-
-    if valid_scatter_feats and "uv_index" in data.columns:
-        sample_data = data[valid_scatter_feats + ["uv_index"]].dropna()
-
-        if len(sample_data) > 10:
-            sample = sample_data.sample(min(3000, len(sample_data)), random_state=42)
-            sel_feat = st.selectbox("Chon dac trung", valid_scatter_feats, index=0)
-
-            fig_scatter = px.scatter(
-                sample, x=sel_feat, y="uv_index",
-                opacity=0.3,  trendline="ols",
-                color_continuous_scale=["#3498db"],
-                labels={sel_feat: sel_feat, "uv_index": "UV Index"},
-                title=f"{sel_feat} vs UV Index",
-            )
-            st.plotly_chart(fig_scatter, width='stretch')
-
     # -- time series validation
 
     st.divider()
@@ -332,14 +307,14 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
                         line=dict(color="#3498DB", width=2)
                     ))
 
-                    #Residual
-                    fig_decomp.add_trace(go.Scatter(
-                        x=decomposition.resid.index,
-                        y=decomposition.resid.values,
-                        name="Residual (Nhiễu ngẫu nhiên)",
-                        line=dict(color="#95A5A6", width=1),
-                        opacity=0.6
-                    ))
+                    # #Residual
+                    # fig_decomp.add_trace(go.Scatter(
+                    #     x=decomposition.resid.index,
+                    #     y=decomposition.resid.values,
+                    #     name="Residual (Nhiễu ngẫu nhiên)",
+                    #     line=dict(color="#95A5A6", width=1),
+                    #     opacity=0.6
+                    # ))
 
                     fig_decomp.update_layout(
                         title=f"Seasonal Decomposition - {LOCATION_NAMES.get(decomp_loc, decomp_loc)}",
@@ -353,3 +328,28 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
             except Exception as e:
                 print(e)
                 pass
+
+        # -- 8. Feature scatter ------------------------------------------------
+    st.subheader("Tương quan đặc trưng vs UV Index")
+    scatter_feats = [f for f in key_feats if f in data.columns]
+
+    valid_scatter_feats = []
+    for feat in scatter_feats:
+        if data[feat].nunique() > 1 and data[feat].notna().sum() > 10:
+            valid_scatter_feats.append(feat)
+
+    if valid_scatter_feats and "uv_index" in data.columns:
+        sample_data = data[valid_scatter_feats + ["uv_index"]].dropna()
+
+        if len(sample_data) > 10:
+            sample = sample_data.sample(min(3000, len(sample_data)), random_state=42)
+            sel_feat = st.selectbox("Chon dac trung", valid_scatter_feats, index=0)
+
+            fig_scatter = px.scatter(
+                sample, x=sel_feat, y="uv_index",
+                opacity=0.3, trendline="ols",
+                color_continuous_scale=["#3498db"],
+                labels={sel_feat: sel_feat, "uv_index": "UV Index"},
+                title=f"{sel_feat} vs UV Index",
+            )
+            st.plotly_chart(fig_scatter, width='stretch')
