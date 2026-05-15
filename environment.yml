@@ -21,6 +21,7 @@ dependencies:
   - optuna
   - joblib
   - mlflow
+  - statsmodels
   - pip
   - pip:
     - streamlit
