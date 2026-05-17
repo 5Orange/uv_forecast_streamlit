@@ -33,7 +33,19 @@ SKIN_OPTIONS = {
     6: "6 - Nâu đậm, đen",
 }
 
-
+DISPLAY_NAMES = {
+    "bilstm":         "BiLSTM",
+    "rf":             "Random Forest",
+    "dt":             "Decision Tree",
+    "xgb":            "XGBoost",
+    "lgb":            "LightGBM",
+    "catboost":       "CatBoost",
+    "lstm":           "LSTM",
+    "gru":            "GRU",
+    "cnn_lstm":       "CNN-LSTM",
+    "attention_lstm": "Attention-LSTM",
+    "prophet_lgb":    "Prophet+LGB",
+}
 
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/sun.png", width=64)
@@ -74,7 +86,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
-kpi1.metric("Mô hình tốt nhất", best_model)
+kpi1.metric("Mô hình tốt nhất", DISPLAY_NAMES.get(best_model, best_model))
 kpi2.metric("RMSE tốt nhất",  f"{best_rmse:.4f}")
 kpi3.metric("R2 tốt nhất",    f"{best_r2:.4f}")
 kpi4.metric("Khu vực",        f"{len(LOCATION_NAMES)}")
@@ -140,7 +152,7 @@ Air Quality (Ozone, Aerosol) ----┘      - pvlib Solar Position (zenith, elevat
                                                   |
                                                   v
                                       [ Model Inference ]
-                                       {best_model} (R2={best_r2:.4f}, RMSE={best_rmse:.4f})
+                                       {DISPLAY_NAMES.get(best_model, best_model)} (R2={best_r2:.4f}, RMSE={best_rmse:.4f})
                                         - Dự báo UV liên tục
                                         - Lọc ban đêm (solar_elevation <= 0 -> UV = 0)
                                         - Phân loại mức độ WHO (Thấp -> Cực đoan)

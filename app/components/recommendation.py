@@ -22,7 +22,7 @@ from app.utils.forecaster import get_live_forecast
 from config import STATIC_DIR, LOCATIONS
 
 # -- Constants -----------------------------------------------------------------
-from src.recommendation.safe_time_policy import MED_VALUES_JM2
+from src.recommendation.safe_time_policy import MED_VALUES_JM2, SKIN_TYPE_MULTIPLIER
 
 WHO_CAT_COLORS = {
     "Low": "#27ae60", "Moderate": "#f1c40f", "High": "#e67e22",
@@ -241,11 +241,26 @@ def _render_location_picker() -> tuple[float, float, str] | None:
         clicked = map_data["last_clicked"]
         lat = clicked["lat"]
         lon = clicked["lng"]
+
+        # Detect genuinely new click vs stale last_clicked replay
+        old_lat = st.session_state.get("rec_click_lat")
+        old_lon = st.session_state.get("rec_click_lon")
+        is_new_click = (
+            old_lat is None
+            or abs(lat - old_lat) > 1e-6
+            or abs(lon - old_lon) > 1e-6
+        )
+
         st.session_state["rec_click_lat"] = lat
         st.session_state["rec_click_lon"] = lon
         station_id, dist = _find_nearest_station(lat, lon)
         st.session_state["rec_nearest_station"] = station_id
         st.session_state["rec_nearest_dist"] = dist
+
+        # Force rerun so the map re-renders with updated center & marker
+        if is_new_click:
+            st.rerun()
+
         return lat, lon, station_id
 
     # Return previous click if exists

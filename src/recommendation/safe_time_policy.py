@@ -12,6 +12,14 @@ MED_VALUES_JM2 = {
     5: 600.0,   # Type V  - Brown, very rarely burns
     6: 1000.0,  # Type VI - Dark, never burns
 }
+SKIN_TYPE_MULTIPLIER = {
+    1: 2.5,
+    2: 3.0,
+    3: 4.0,
+    4: 5.0,
+    5: 8.0,
+    6: 15.0,
+}
 
 # Vietnamese Fitzpatrick labels for UI
 SKIN_TYPE_LABELS_VI = {
