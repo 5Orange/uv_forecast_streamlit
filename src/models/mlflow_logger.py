@@ -11,7 +11,7 @@ import torch
 from mlflow.models.signature import ModelSignature
 from mlflow.types.schema import Schema, ColSpec
 
-from src.config import PROJECT_ROOT
+from config import PROJECT_ROOT
 from src.models.mlflow_wrapper import (
     DeepLearningModelWrapper, ProphetLGBWrapper, get_model_wrapper_class
 )

@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 import gc
 
-from src.config import FINAL_FEATURES, FEATURES_DIR
+from config import FINAL_FEATURES, FEATURES_DIR
 from src.models.hyperparameter_tuning import tune_model
 
 def main():

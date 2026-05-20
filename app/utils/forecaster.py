@@ -50,7 +50,30 @@ _AQ_MAX_FORECAST_DAYS = 5
 # Minimum history window (hours) for sequence/prophet models to have enough lookback
 _HISTORY_HOURS = 120  # 5 days
 
-_OZONE_Q25 = 56.0
+# Default fallback — will be overridden by dynamic computation from training data
+_OZONE_Q25_DEFAULT = 56.0
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def _get_ozone_q25() -> float:
+    """Compute ozone Q25 from training data for consistency with BE pipeline.
+
+    BE computes quantile(0.25) dynamically from training data (engr.py L340).
+    This function replicates that to avoid train/infer mismatch.
+    Falls back to 56.0 if data unavailable.
+    """
+    full_path = ROOT / "data" / "processed" / "features" / "features_full.csv"
+    if not full_path.exists():
+        return _OZONE_Q25_DEFAULT
+    try:
+        import pandas as _pd
+        df = _pd.read_csv(full_path, usecols=["ozone"])
+        ozone = df["ozone"].dropna()
+        if ozone.empty:
+            return _OZONE_Q25_DEFAULT
+        return float(ozone.quantile(0.25))
+    except Exception:
+        return _OZONE_Q25_DEFAULT
 
 def _fetch_historical(endpoint: str, loc_id: str, loc: dict,
                       past_hours: int = 48,
@@ -204,7 +227,10 @@ def _compute_all_features(df: pd.DataFrame, loc_id: str, loc: dict,
     df["cos_zenith_squared"] = df["cos_solar_zenith"] ** 2
 
     cc_raw = df.get("cloud_cover", pd.Series(50, index=df.index)).fillna(50)
-    df["cloud_attenuation_exp"] = np.exp(-cc_raw / 50)
+    # Kasten & Czeplak (1980) Cloud Modification Factor
+    # CMF = 1 - 0.75 * (CC/100)^3.4
+    # Source: doi:10.1016/0038-092X(80)90391-6
+    df["cloud_attenuation_exp"] = (1 - 0.75 * np.power(cc_raw / 100.0, 3.4)).clip(0.05, 1.0)
 
     temp = df.get("temperature_2m", pd.Series(np.nan, index=df.index))
     rh   = df.get("relative_humidity_2m", pd.Series(np.nan, index=df.index))
@@ -220,7 +246,8 @@ def _compute_all_features(df: pd.DataFrame, loc_id: str, loc: dict,
     df["altitude_solar_interaction"] = df["altitude_m"] * df["cos_solar_zenith"] / 1000
 
     ozone_val = df.get("ozone", pd.Series(np.nan, index=df.index)).fillna(70)
-    df["ozone_depletion_risk"] = (ozone_val < _OZONE_Q25).astype(int)
+    ozone_q25 = _get_ozone_q25()
+    df["ozone_depletion_risk"] = (ozone_val < ozone_q25).astype(int)
 
     aod  = df.get("aerosol_optical_depth", pd.Series(0, index=df.index)).fillna(0)
     pm25 = df.get("pm2_5", pd.Series(0, index=df.index)).fillna(0)
@@ -264,7 +291,15 @@ def _predict(
                 )
             model_input = df[daytime].copy()
         else:
-            model_input = X.values[daytime]
+            # Apply physics constraint: X *= cos_solar_zenith
+            # This must match training pipeline (train_pipeline.py L55-59)
+            # where apply_physics_constraint() multiplies all features by cos_z.
+            X_day = X.values[daytime].copy()
+            cos_zenith_idx = feat_cols.index('cos_solar_zenith') if 'cos_solar_zenith' in feat_cols else None
+            if cos_zenith_idx is not None:
+                cos_z = X_day[:, cos_zenith_idx].clip(min=0)
+                X_day = X_day * cos_z[:, np.newaxis]
+            model_input = X_day
 
         if use_serving and databricks_client and databricks_client.enabled:
             try:
@@ -311,7 +346,10 @@ def _predict(
             .replace(0, 1)
         )
 
-        solar_scale = (cos_z / daily_peak_cos) ** 0.5
+        # Erythemal UV power law: UV ∝ cos(z)^n, n≈1.2
+        # Source: Madronich (1993), doi:10.1201/9781351069847
+        # n=1.2 accounts for increased atmospheric path through ozone at low sun
+        solar_scale = (cos_z / daily_peak_cos) ** 1.2
 
         df.loc[daytime, "uv_predicted"] = df.loc[daytime, "uv_predicted"] * solar_scale
 

@@ -3,7 +3,7 @@ import pandas as pd
 import gc
 from sklearn.metrics import r2_score
 
-from src.config import FINAL_FEATURES, FEATURES_DIR, PROJECT_ROOT
+from config import FINAL_FEATURES, FEATURES_DIR, PROJECT_ROOT
 from src.models.train_optimized import train_all_models
 from src.models.evaluation import evaluate_model, stratified_evaluation, mbe, mape
 from src.models.mlflow_logger import (
@@ -52,6 +52,12 @@ def load_data_optimized():
 
     return df
 
+def apply_physics_constraint(X, feature_cols, cos_zenith_col_idx):
+    X_physics = X.copy()
+    cos_z = X[:, cos_zenith_col_idx].clip(min=0)
+    X_physics = X_physics * cos_z[:, np.newaxis]
+    return X_physics
+
 def split_data(df):
     print("\nSplitting data (70/15/15) temporal...")
 
@@ -77,6 +83,13 @@ def split_data(df):
 
     X_test = test_df[feature_cols].values
     y_test = test_df['uv_index'].values
+
+    cos_zenith_idx = feature_cols.index('cos_solar_zenith') if 'cos_solar_zenith' in feature_cols else None
+
+    if cos_zenith_idx is not None:
+        X_train = apply_physics_constraint(X_train, feature_cols, cos_zenith_idx)
+        X_val = apply_physics_constraint(X_val, feature_cols, cos_zenith_idx)
+        X_test = apply_physics_constraint(X_test, feature_cols, cos_zenith_idx)
 
     return X_train, y_train, X_val, y_val, X_test, y_test, feature_cols, train_df, val_df, test_df
 
@@ -139,7 +152,8 @@ def main():
 
     print("MLFlow Configuration")
     print("=" * 70)
-    mlflow_enabled = setup_mlflow()
+    # mlflow_enabled = setup_mlflow()
+    mlflow_enabled = False
     if mlflow_enabled:
         print("MlFlow tracking to databricks enabled")
     else:
