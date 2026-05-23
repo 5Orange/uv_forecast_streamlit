@@ -15,6 +15,10 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from app.utils.plotly_theme import configure_plotly_theme
+
+configure_plotly_theme()
+
 from app.components import eda, forecast, model_results, recommendation, evaluation
 from app.utils.data_loader import (
     LOCATION_NAMES,

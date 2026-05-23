@@ -247,9 +247,16 @@ def _make_fake_recommendations_from_scenario(
     uv           = scenario["context"]["uv_forecast"]
     has_rain     = scenario["context"].get("is_raining", False)
     temperature  = scenario["context"].get("temperature", 28)
+    location_id  = scenario["context"].get("location_id", "")
+
+    # Filter catalog to places matching the scenario's location
+    local_catalog = [p for p in catalog if p.get("location_key", "") == location_id]
+    if not local_catalog:
+        # Fallback: use full catalog if no places match (should not happen with clean data)
+        local_catalog = catalog
 
     scored = []
-    for place in catalog:
+    for place in local_catalog:
         shade_pct = place.get("shade_coverage_pct", 50)
         is_indoor = place.get("indoor_option", False)
 
@@ -275,15 +282,22 @@ def _make_fake_recommendations_from_scenario(
         score = safe_ratio * thermal_modifier * rain_modifier
 
         scored.append({
-            "name":          place["name"],
-            "type":          place.get("type", ""),
-            "score":         round(score, 4),
-            "safe_pct":      round(safe_ratio * 100, 1),
-            "indoor_option": is_indoor,
-            "has_shade":     place.get("has_shade", False),
-            "lat":           place.get("lat"),
-            "lon":           place.get("lon"),
-            "location_key":  place.get("location_key", ""),
+            "name":              place["name"],
+            "type":              place.get("type", ""),
+            "score":             round(score, 4),
+            "safe_pct":          round(safe_ratio * 100, 1),
+            "indoor_option":     is_indoor,
+            "has_shade":         place.get("has_shade", False),
+            "lat":               place.get("lat"),
+            "lon":               place.get("lon"),
+            "location_key":      place.get("location_key", ""),
+            # -- Scoring component breakdown for UI transparency --
+            "effective_uv":      round(effective_uv, 4),
+            "safe_minutes":      round(safe_minutes, 1),
+            "safe_ratio":        round(safe_ratio, 4),
+            "thermal_modifier":  thermal_modifier,
+            "rain_modifier":     rain_modifier,
+            "shade_coverage_pct": shade_pct,
         })
     return sorted(scored, key=lambda x: x["score"], reverse=True)
 

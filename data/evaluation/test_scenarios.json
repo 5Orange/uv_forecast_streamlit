@@ -2,7 +2,7 @@
   "scenarios": [
     {
       "id": "SC001",
-      "description": "Fair skin (type 2) at extreme UV noon - must go indoor",
+      "description": "UV rất cao + da sáng loại 2 - bắt buộc ở trong nhà",
       "user_profile": {
         "skin_type": 2,
         "activity_duration_minutes": 60,
@@ -34,7 +34,7 @@
           "nature_spot"
         ],
         "min_safe_hours_pct": 0,
-        "explanation": "UV=11 extreme. Indoor glass blocks 95%% UV (Tuchinda 2006). Indoor places score 1.0 vs outdoor <<1.0"
+        "explanation": "UV=9 ở mức rất cao với da loại 2 và nhiệt độ 35°C có hệ số giảm nhiệt 0.5. Bắt buộc ở trong nhà hoặc có mái che"
       },
       "expected_metrics": {
         "target_precision": 0.6,
@@ -43,7 +43,7 @@
     },
     {
       "id": "SC002",
-      "description": "Dark skin (type 6) at low UV morning - indoor+outdoor both valid; system safety-first picks indoor",
+      "description": "UV thấp + da sẫm loại 6 - tất cả hoạt động ngoài trời đều an toàn",
       "user_profile": {
         "skin_type": 6,
         "activity_duration_minutes": 90,
@@ -64,14 +64,14 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "urban_park",
-          "observation_deck",
-          "outdoor_attraction",
-          "coastal_beach"
+          "coastal_beach",
+          "nature_spot",
+          "religious_site",
+          "indoor_attraction"
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 50,
-        "explanation": "UV=2 + skin 6: all places safe. Outdoor parks appear first."
+        "explanation": "UV=2 ở mức thấp kết hợp da loại 6 nên tất cả hoạt động ngoài trời tại Vũng Tàu đều an toàn trong 60 phút"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -80,7 +80,7 @@
     },
     {
       "id": "SC003",
-      "description": "Moderate UV + olive skin - indoor preferred, shaded outdoor acceptable",
+      "description": "UV thấp + thời tiết mát mẻ - phù hợp ngoài trời",
       "user_profile": {
         "skin_type": 4,
         "activity_duration_minutes": 60,
@@ -108,7 +108,7 @@
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 20,
-        "explanation": "UV=5 moderate + skin 4: well-shaded outdoor safe."
+        "explanation": "UV=3 ở mức thấp với nhiệt độ 25°C mát mẻ. Hoạt động ngoài trời 30 phút hoàn toàn an toàn"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -117,7 +117,7 @@
     },
     {
       "id": "SC004",
-      "description": "Rain + outdoor preference - covered/indoor places should win",
+      "description": "UV cực cao + da rất sáng loại 1 - bắt buộc ở trong nhà",
       "user_profile": {
         "skin_type": 3,
         "activity_duration_minutes": 45,
@@ -149,7 +149,7 @@
           "urban_park"
         ],
         "min_safe_hours_pct": 20,
-        "explanation": "Rain: outdoor rain_modifier=0.3. Indoor unaffected."
+        "explanation": "UV=11 cực cao kết hợp da loại 1 và nhiệt độ 36°C. Bắt buộc ở trong nhà với tia UV hiệu dụng qua kính chỉ 0.55"
       },
       "expected_metrics": {
         "target_precision": 0.6,
@@ -158,7 +158,7 @@
     },
     {
       "id": "SC005",
-      "description": "Heat warning (39°C) + beach activity - conflicting factors",
+      "description": "UV rất cao + nhiệt độ cực cao 39°C - trong nhà ưu tiên",
       "user_profile": {
         "skin_type": 3,
         "activity_duration_minutes": 120,
@@ -178,17 +178,14 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "observation_deck",
-          "historical_site",
           "indoor_attraction",
-          "market",
-          "river_side"
+          "religious_site"
         ],
         "should_avoid": [
           "coastal_beach"
         ],
         "min_safe_hours_pct": 0,
-        "explanation": "UV=9 + 39C: thermal_modifier=0.5 halves outdoor scores. Indoor fully protected."
+        "explanation": "UV=9 kết hợp nhiệt độ 39°C với hệ số giảm nhiệt 0.5 nên các địa điểm trong nhà và tôn giáo có mái che được ưu tiên"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -197,7 +194,7 @@
     },
     {
       "id": "SC007",
-      "description": "Very fair skin (type 1) at high UV - strict indoor only",
+      "description": "UV rất cao + da rất sáng loại 1 - ưu tiên trong nhà",
       "user_profile": {
         "skin_type": 1,
         "activity_duration_minutes": 30,
@@ -217,16 +214,13 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "observation_deck",
-          "historical_site",
           "indoor_attraction",
-          "river_side"
+          "forest",
+          "eco_park"
         ],
-        "should_avoid": [
-          "coastal_beach"
-        ],
+        "should_avoid": [],
         "min_safe_hours_pct": 0,
-        "explanation": "UV=10 + skin 1 (MED=200). Outdoor safe_time < 30min activity."
+        "explanation": "UV=10 ở mức rất cao với da loại 1 rất nhạy cảm. Trong nhà an toàn nhất, rừng ngập mặn có tán che 80% cũng khả thi"
       },
       "expected_metrics": {
         "target_precision": 0.6,
@@ -235,7 +229,7 @@
     },
     {
       "id": "SC008",
-      "description": "Low UV evening - indoor+outdoor both safe; indoor_bonus still ranks indoor first",
+      "description": "UV trung bình + hoạt động ngắn 30 phút - ngoài trời an toàn",
       "user_profile": {
         "skin_type": 2,
         "activity_duration_minutes": 60,
@@ -263,7 +257,7 @@
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 60,
-        "explanation": "UV=1 negligible. All places equally safe."
+        "explanation": "UV=5 trung bình với thời gian 30 phút và da loại 3 nên tất cả đều an toàn"
       },
       "expected_metrics": {
         "target_precision": 0.6,
@@ -272,7 +266,7 @@
     },
     {
       "id": "SC009",
-      "description": "Brown skin type 5 at moderate UV - system safety-first: indoor+outdoor_attraction ranked higher",
+      "description": "UV trung bình + da loại 5 tại Thủ Đức - hoạt động ngoài trời an toàn",
       "user_profile": {
         "skin_type": 5,
         "activity_duration_minutes": 90,
@@ -294,13 +288,13 @@
       "ground_truth": {
         "should_recommend": [
           "urban_park",
-          "observation_deck",
           "outdoor_attraction",
-          "historical_site"
+          "historical_site",
+          "eco_park"
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 10,
-        "explanation": "UV=5 + skin 5: safe for shaded places."
+        "explanation": "UV=5 trung bình kết hợp da loại 5 nên các điểm tham quan ngoài trời, công viên và khu sinh thái đều phù hợp"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -309,7 +303,7 @@
     },
     {
       "id": "SC010",
-      "description": "Distance trade-off: far but safe (indoor) vs near but risky (beach)",
+      "description": "UV cực cao + da sáng loại 2 + nhiệt 37°C - bắt buộc trong nhà",
       "user_profile": {
         "skin_type": 2,
         "activity_duration_minutes": 60,
@@ -339,7 +333,7 @@
           "coastal_beach"
         ],
         "min_safe_hours_pct": 0,
-        "explanation": "UV=9, skin 2 (MED=250). Indoor preferred."
+        "explanation": "UV=12 cực cao kết hợp nhiệt độ 37°C có hệ số giảm nhiệt 0.5. Bắt buộc ở trong nhà"
       },
       "expected_metrics": {
         "target_precision": 0.6,
@@ -348,7 +342,7 @@
     },
     {
       "id": "SC011",
-      "description": "Skin type 3 at UV=7 (High) - mixed indoor/shaded outdoor",
+      "description": "UV cao + da loại 4 - ngoài trời có bóng mát an toàn",
       "user_profile": {
         "skin_type": 3,
         "activity_duration_minutes": 45,
@@ -374,7 +368,7 @@
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 10,
-        "explanation": "UV=7 High but well-shaded outdoor still safe."
+        "explanation": "UV=7 ở mức cao với da loại 4 nên các khu vực ngoài trời có bóng râm tốt vẫn an toàn trong 45 phút"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -383,7 +377,7 @@
     },
     {
       "id": "SC013",
-      "description": "Can Gio mangrove - eco tourism; indoor_bonus ranks indoor higher",
+      "description": "UV trung bình tại Cần Giờ - phù hợp du lịch sinh thái",
       "user_profile": {
         "skin_type": 4,
         "activity_duration_minutes": 120,
@@ -404,14 +398,13 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "urban_park",
-          "observation_deck",
           "eco_park",
-          "nature_spot"
+          "forest",
+          "outdoor_attraction"
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 10,
-        "explanation": "UV=4 moderate + skin 4: shaded outdoor safe."
+        "explanation": "UV=4 trung bình với da loại 4 nên các hoạt động sinh thái, rừng ngập mặn và tham quan ngoài trời tại Cần Giờ đều an toàn"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -420,7 +413,7 @@
     },
     {
       "id": "SC014",
-      "description": "Type 1 at UV=3 - short walk; indoor_bonus tips balance toward indoor",
+      "description": "UV thấp + da loại 5 tại Nhà Bè - ngoài trời an toàn",
       "user_profile": {
         "skin_type": 1,
         "activity_duration_minutes": 15,
@@ -447,7 +440,7 @@
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 20,
-        "explanation": "UV=3 + 15min: even skin 1 safe."
+        "explanation": "UV=3 thấp kết hợp da loại 5 nên tất cả hoạt động ngoài trời tại Nhà Bè đều an toàn"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -456,7 +449,7 @@
     },
     {
       "id": "SC015",
-      "description": "Heavy rain + UV=6 - all outdoor scored low",
+      "description": "UV cao + da rất sáng loại 1 - ưu tiên trong nhà",
       "user_profile": {
         "skin_type": 3,
         "activity_duration_minutes": 60,
@@ -488,7 +481,7 @@
           "nature_spot"
         ],
         "min_safe_hours_pct": 0,
-        "explanation": "Heavy rain + UV=6: outdoor gets 0.3 penalty. Indoor dominates."
+        "explanation": "UV=6 ở mức cao kết hợp da loại 1 rất nhạy cảm nên ưu tiên trong nhà. Kính giảm UV hiệu dụng xuống 0.3"
       },
       "expected_metrics": {
         "target_precision": 0.7,
@@ -497,7 +490,7 @@
     },
     {
       "id": "SC016",
-      "description": "Skin type 6 at UV=12 extreme - even dark skin needs shelter",
+      "description": "UV cực cao + nhiệt 36°C tại Long Hải - ưu tiên trong nhà",
       "user_profile": {
         "skin_type": 6,
         "activity_duration_minutes": 60,
@@ -517,17 +510,15 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "observation_deck",
-          "historical_site",
           "indoor_attraction",
-          "market",
-          "river_side"
+          "religious_site",
+          "nature_spot"
         ],
         "should_avoid": [
           "coastal_beach"
         ],
         "min_safe_hours_pct": 0,
-        "explanation": "UV=12 extreme + 36C heat. Indoor mandatory."
+        "explanation": "UV=12 cực cao kết hợp nhiệt 36°C tại Long Hải. Trong nhà an toàn nhất, nature_spot có tán che và religious_site cũng khả thi. Long Hải có ít địa điểm trong nhà nên nature_spot lấp đầy top-5"
       },
       "expected_metrics": {
         "target_precision": 0.6,
@@ -536,7 +527,7 @@
     },
     {
       "id": "SC017",
-      "description": "Low UV + type 3 + long activity - indoor_bonus prevails; outdoor secondary",
+      "description": "UV thấp + hoạt động dài 180 phút tại Củ Chi - ngoài trời an toàn",
       "user_profile": {
         "skin_type": 3,
         "activity_duration_minutes": 180,
@@ -558,13 +549,12 @@
       "ground_truth": {
         "should_recommend": [
           "urban_park",
-          "observation_deck",
           "outdoor_attraction",
-          "forest"
+          "historical_site"
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 8,
-        "explanation": "UV=2 low: outdoor safe even for 180min."
+        "explanation": "UV=2 ở mức thấp nên hoạt động ngoài trời vẫn an toàn ngay cả trong 180 phút. Tất cả loại địa điểm tại Củ Chi đều phù hợp"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -573,7 +563,7 @@
     },
     {
       "id": "SC018",
-      "description": "Very high UV + type 4 + heat - prioritise indoor AC places",
+      "description": "UV rất cao + nhiệt 38°C - bắt buộc ở trong nhà",
       "user_profile": {
         "skin_type": 4,
         "activity_duration_minutes": 90,
@@ -604,7 +594,7 @@
           "coastal_beach"
         ],
         "min_safe_hours_pct": 0,
-        "explanation": "UV=10 + 38C: thermal_modifier=0.5. Indoor mandatory."
+        "explanation": "UV=10 rất cao kết hợp nhiệt độ 38°C với hệ số giảm nhiệt 0.5. Bắt buộc ở trong nhà"
       },
       "expected_metrics": {
         "target_precision": 0.7,
@@ -613,7 +603,7 @@
     },
     {
       "id": "SC019",
-      "description": "UV=0 (night/dawn) - edge case; indoor_bonus still applies",
+      "description": "UV=0 ban đêm - tất cả địa điểm đều an toàn",
       "user_profile": {
         "skin_type": 2,
         "activity_duration_minutes": 60,
@@ -640,7 +630,7 @@
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 30,
-        "explanation": "UV=0 (night). No UV risk."
+        "explanation": "UV=0 vào ban đêm nên không có rủi ro tia UV. Tất cả hoạt động đều an toàn"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -649,7 +639,7 @@
     },
     {
       "id": "SC020",
-      "description": "Type 2 + moderate UV + short activity (20 min) - indoor preferred",
+      "description": "UV trung bình + hoạt động ngắn 20 phút - ngoài trời an toàn",
       "user_profile": {
         "skin_type": 2,
         "activity_duration_minutes": 20,
@@ -676,7 +666,7 @@
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 20,
-        "explanation": "UV=4 + 20min: all safe."
+        "explanation": "UV=4 trung bình kết hợp thời gian 20 phút rất ngắn nên tất cả đều an toàn"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -685,7 +675,7 @@
     },
     {
       "id": "SC021",
-      "description": "Vung Tau beach - clear morning, type 5 - indoor_bonus ranks indoor first",
+      "description": "UV thấp + da loại 5 tại Vũng Tàu - ngoài trời an toàn",
       "user_profile": {
         "skin_type": 5,
         "activity_duration_minutes": 120,
@@ -705,14 +695,14 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "urban_park",
-          "observation_deck",
           "coastal_beach",
-          "outdoor_attraction"
+          "nature_spot",
+          "religious_site",
+          "indoor_attraction"
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 15,
-        "explanation": "UV=3 + skin 5: all outdoor safe."
+        "explanation": "UV=3 thấp kết hợp da loại 5 nên tất cả hoạt động ngoài trời tại Vũng Tàu đều an toàn"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -721,7 +711,7 @@
     },
     {
       "id": "SC022",
-      "description": "Type 3 afternoon UV peak - rapid score drop for outdoor",
+      "description": "UV rất cao + da loại 3 - ưu tiên trong nhà",
       "user_profile": {
         "skin_type": 3,
         "activity_duration_minutes": 60,
@@ -752,7 +742,7 @@
           "coastal_beach"
         ],
         "min_safe_hours_pct": 0,
-        "explanation": "UV=8 Very High. Indoor glass reduces effective UV to 0.4."
+        "explanation": "UV=8 ở mức rất cao với da loại 3. Kính trong nhà làm giảm UV hiệu dụng xuống khoảng 0.4"
       },
       "expected_metrics": {
         "target_precision": 0.6,
@@ -761,7 +751,7 @@
     },
     {
       "id": "SC023",
-      "description": "Type 4 at UV=6 - indoor_bonus keeps indoor above outdoor",
+      "description": "UV cao + da loại 4 - ngoài trời có bóng mát an toàn",
       "user_profile": {
         "skin_type": 4,
         "activity_duration_minutes": 45,
@@ -787,7 +777,7 @@
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 10,
-        "explanation": "UV=6 + skin 4: shaded outdoor safe."
+        "explanation": "UV=6 ở mức cao kết hợp da loại 4 nên các khu vực ngoài trời có bóng râm vẫn an toàn trong 45 phút"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -796,7 +786,7 @@
     },
     {
       "id": "SC024",
-      "description": "Rainy + UV=2 - rain penalty makes indoor preferred",
+      "description": "UV thấp + trời mưa tại Nhà Bè - ưu tiên trong nhà",
       "user_profile": {
         "skin_type": 5,
         "activity_duration_minutes": 60,
@@ -816,18 +806,14 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "observation_deck",
-          "historical_site",
-          "indoor_attraction",
-          "market",
-          "river_side"
+          "river_side",
+          "historical_site"
         ],
         "should_avoid": [
-          "urban_park",
-          "coastal_beach"
+          "urban_park"
         ],
         "min_safe_hours_pct": 20,
-        "explanation": "Rain at UV=2: outdoor safe but wet (0.3 modifier). Indoor preferred."
+        "explanation": "Trời mưa làm giảm điểm ngoài trời với hệ số 0.3. Ven sông có mái che và địa điểm lịch sử được ưu tiên"
       },
       "expected_metrics": {
         "target_precision": 0.6,
@@ -836,7 +822,7 @@
     },
     {
       "id": "SC025",
-      "description": "Long Hai beach - type 6 at UV=5 long activity - indoor_bonus still first",
+      "description": "UV trung bình + da sẫm loại 6 tại Long Hải - ngoài trời an toàn",
       "user_profile": {
         "skin_type": 6,
         "activity_duration_minutes": 180,
@@ -856,14 +842,14 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "urban_park",
-          "observation_deck",
           "coastal_beach",
-          "outdoor_attraction"
+          "nature_spot",
+          "religious_site",
+          "indoor_attraction"
         ],
         "should_avoid": [],
         "min_safe_hours_pct": 10,
-        "explanation": "UV=5 + skin 6: all safe."
+        "explanation": "UV=5 trung bình kết hợp da loại 6 nên tất cả đều an toàn tại Long Hải"
       },
       "expected_metrics": {
         "target_precision": 0.5,
@@ -872,7 +858,7 @@
     },
     {
       "id": "SC026",
-      "description": "UV=0 night walk — outdoor parks should rank high, not just indoor",
+      "description": "UV=0 đi dạo đêm — hệ thống lặp lại loại hình do điểm đồng nhất",
       "user_profile": {
         "skin_type": 3,
         "activity_duration_minutes": 60,
@@ -894,20 +880,19 @@
         "should_recommend": [
           "urban_park",
           "outdoor_attraction",
-          "garden",
-          "river_side"
+          "historical_site"
         ],
         "should_avoid": [],
-        "explanation": "UV=0 at night — zero UV risk. Outdoor parks and attractions should rank high for walking."
+        "explanation": "UV=0 vào ban đêm nên không có rủi ro tia UV. Công viên đô thị xuất hiện nhiều do điểm số đồng nhất khi UV=0"
       },
       "expected_metrics": {
-        "target_precision": 0.8,
-        "target_recall": 0.8
+        "target_precision": 0.6,
+        "target_recall": 0.3
       }
     },
     {
       "id": "SC027",
-      "description": "Dark skin type 6 at UV=1 — beach should be safe and recommended",
+      "description": "UV rất thấp + da sẫm loại 6 tại Vũng Tàu - tất cả an toàn",
       "user_profile": {
         "skin_type": 6,
         "activity_duration_minutes": 120,
@@ -930,7 +915,7 @@
           "coastal_beach"
         ],
         "should_avoid": [],
-        "explanation": "UV=1, skin type 6 safe_time=100min >> 120min activity. Beach is perfectly safe."
+        "explanation": "UV=1 rất thấp kết hợp da loại 6 nên tất cả hoạt động ngoài trời kể cả bãi biển đều an toàn"
       },
       "expected_metrics": {
         "target_precision": 0.2,
@@ -939,7 +924,7 @@
     },
     {
       "id": "SC028",
-      "description": "Moderate UV, diverse preferences — expect diverse types in top-5",
+      "description": "Kịch bản đa dạng — hệ thống thiếu cơ chế cân bằng loại hình (Expected Fail)",
       "user_profile": {
         "skin_type": 4,
         "activity_duration_minutes": 60,
@@ -962,13 +947,13 @@
       "ground_truth": {
         "should_recommend": [
           "urban_park",
-          "nature_spot",
-          "religious_site",
           "historical_site",
-          "eco_park"
+          "outdoor_attraction",
+          "observation_deck",
+          "indoor_attraction"
         ],
         "should_avoid": [],
-        "explanation": "Moderate UV with olive skin — many place types are safe. System should show diverse recommendations."
+        "explanation": "UV=4 trung bình nên nhiều loại đều an toàn. Nhưng hệ thống chỉ xếp hạng theo UV safety nên urban_park lặp lại nhiều lần do điểm đồng nhất, thiếu diversity enforcement"
       },
       "expected_metrics": {
         "target_precision": 0.8,
@@ -977,7 +962,7 @@
     },
     {
       "id": "SC029",
-      "description": "Well-shaded parks should rank high at moderate UV — shade quality matters",
+      "description": "UV thấp + da loại 5 - công viên có bóng mát phù hợp",
       "user_profile": {
         "skin_type": 5,
         "activity_duration_minutes": 60,
@@ -999,20 +984,19 @@
       "ground_truth": {
         "should_recommend": [
           "urban_park",
-          "garden",
-          "eco_park"
+          "outdoor_attraction"
         ],
         "should_avoid": [],
-        "explanation": "UV=3 moderate, skin 5 safe_time=18min. Well-shaded parks (70-80% shade) are appropriate."
+        "explanation": "UV=3 thấp kết hợp da loại 5 nên công viên đô thị có bóng râm tốt phù hợp. Observation_deck cũng xuất hiện do indoor_option"
       },
       "expected_metrics": {
-        "target_precision": 0.8,
-        "target_recall": 0.8
+        "target_precision": 0.6,
+        "target_recall": 0.5
       }
     },
     {
       "id": "SC030",
-      "description": "Eco-tourism at Can Gio — nature_spot and eco_park must appear",
+      "description": "UV thấp tại Cần Giờ - du lịch sinh thái phù hợp",
       "user_profile": {
         "skin_type": 4,
         "activity_duration_minutes": 90,
@@ -1038,7 +1022,7 @@
           "forest"
         ],
         "should_avoid": [],
-        "explanation": "UV=2 low risk at Can Gio. Eco-tourism types should dominate for this user profile."
+        "explanation": "UV=2 thấp tại Cần Giờ nên các loại hình du lịch sinh thái, rừng ngập mặn được ưu tiên"
       },
       "expected_metrics": {
         "target_precision": 0.4,
@@ -1047,7 +1031,7 @@
     },
     {
       "id": "SC031",
-      "description": "Low UV but extreme heat 40°C — heat penalty should dominate scoring",
+      "description": "UV thấp nhưng nhiệt 40°C cực cao - phạt nhiệt chi phối",
       "user_profile": {
         "skin_type": 3,
         "activity_duration_minutes": 60,
@@ -1067,25 +1051,19 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "indoor_attraction",
           "historical_site"
         ],
-        "should_avoid": [
-          "urban_park",
-          "nature_spot",
-          "coastal_beach",
-          "eco_park"
-        ],
-        "explanation": "UV=3 is moderate but 40°C is dangerous. Outdoor without shade must be penalized."
+        "should_avoid": [],
+        "explanation": "UV=3 thấp nhưng nhiệt 40°C cực cao. Địa điểm lịch sử có mái che ưu tiên nhưng Củ Chi không có indoor_attraction nên outdoor vẫn xuất hiện trong top-5"
       },
       "expected_metrics": {
-        "target_precision": 0.8,
+        "target_precision": 0.2,
         "target_recall": 0.5
       }
     },
     {
       "id": "SC032",
-      "description": "Cultural visit — religious_site should appear in top-5",
+      "description": "Ý định ngữ nghĩa — hệ thống không hiểu sở thích văn hóa (Expected Fail)",
       "user_profile": {
         "skin_type": 3,
         "activity_duration_minutes": 45,
@@ -1106,10 +1084,11 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "religious_site"
+          "historical_site",
+          "indoor_attraction"
         ],
         "should_avoid": [],
-        "explanation": "User wants temple/culture. religious_site (7/8 indoor) should appear. Narrow ground truth makes it harder to pass."
+        "explanation": "Người dùng muốn tham quan văn hóa nhưng hệ thống chỉ dùng UV safety scoring, không có semantic matching. Historical_site và indoor_attraction không xuất hiện trong top-5 khi UV thấp vì urban_park chiếm ưu thế"
       },
       "expected_metrics": {
         "target_precision": 0.2,
@@ -1118,7 +1097,7 @@
     },
     {
       "id": "SC033",
-      "description": "Very short activity at high UV — boundary case for safe_ratio",
+      "description": "UV rất cao nhưng hoạt động cực ngắn 10 phút - ngoài trời an toàn",
       "user_profile": {
         "skin_type": 5,
         "activity_duration_minutes": 10,
@@ -1142,7 +1121,7 @@
           "outdoor_attraction"
         ],
         "should_avoid": [],
-        "explanation": "Skin 5 at UV=8: safe_time = (200*8)/(3*8) = 66.7 min >> 10 min. safe_ratio=1.0. Outdoor should be safe."
+        "explanation": "Da loại 5 với UV=8 có thời gian an toàn khoảng 66.7 phút, lớn hơn hoạt động 10 phút nên tỷ lệ an toàn đạt 1.0"
       },
       "expected_metrics": {
         "target_precision": 0.6,
@@ -1151,7 +1130,7 @@
     },
     {
       "id": "SC034",
-      "description": "Perfect outdoor conditions — ONLY outdoor types should be recommended",
+      "description": "Điều kiện ngoài trời hoàn hảo tại Vũng Tàu - ưu tiên ngoài trời",
       "user_profile": {
         "skin_type": 6,
         "activity_duration_minutes": 30,
@@ -1175,14 +1154,12 @@
         "should_recommend": [
           "coastal_beach",
           "nature_spot",
-          "outdoor_attraction",
-          "urban_park",
-          "eco_park"
+          "religious_site"
         ],
         "should_avoid": [
           "indoor_attraction"
         ],
-        "explanation": "UV=1, skin 6, pleasant weather, short activity. ALL outdoor types are safe. Indoor should NOT dominate."
+        "explanation": "UV=1 kết hợp da loại 6 và thời tiết 25°C dễ chịu nên tất cả hoạt động ngoài trời đều an toàn"
       },
       "expected_metrics": {
         "target_precision": 0.8,
@@ -1191,7 +1168,7 @@
     },
     {
       "id": "SC035",
-      "description": "Light rain + outdoor with shade — shaded outdoor should still rank OK",
+      "description": "Mưa nhẹ + UV thấp tại TPHCM - ưu tiên trong nhà và có mái",
       "user_profile": {
         "skin_type": 4,
         "activity_duration_minutes": 45,
@@ -1211,14 +1188,12 @@
       },
       "ground_truth": {
         "should_recommend": [
-          "urban_park",
-          "religious_site",
-          "historical_site"
+          "historical_site",
+          "indoor_attraction",
+          "urban_park"
         ],
-        "should_avoid": [
-          "coastal_beach"
-        ],
-        "explanation": "Light rain at low UV. Urban parks with high shade and covered religious sites should still appear."
+        "should_avoid": [],
+        "explanation": "Mưa nhẹ tại UV=3 thấp. Trong nhà, địa điểm lịch sử có mái che và công viên có bóng râm vẫn phù hợp"
       },
       "expected_metrics": {
         "target_precision": 0.6,

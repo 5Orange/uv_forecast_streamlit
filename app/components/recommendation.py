@@ -197,122 +197,88 @@ def _score_places(
     return sorted(results, key=lambda x: x["score"], reverse=True)
 
 
-def _render_location_picker() -> tuple[float, float, str] | None:
-    if not _FOLIUM_AVAILABLE:
+def _handle_map_click(map_data: dict | None) -> tuple[float, float, str] | None:
+    """Persist a Folium click and return the selected point with nearest station."""
+    if not map_data or not map_data.get("last_clicked"):
         return None
 
-    # Default center: HCM
-    center_lat = st.session_state.get("rec_click_lat", 10.7769)
-    center_lon = st.session_state.get("rec_click_lon", 106.7009)
+    clicked = map_data["last_clicked"]
+    lat = clicked["lat"]
+    lon = clicked["lng"]
+
+    old_lat = st.session_state.get("rec_click_lat")
+    old_lon = st.session_state.get("rec_click_lon")
+    is_new_click = (
+        old_lat is None
+        or abs(lat - old_lat) > 1e-6
+        or abs(lon - old_lon) > 1e-6
+    )
+
+    st.session_state["rec_click_lat"] = lat
+    st.session_state["rec_click_lon"] = lon
+    station_id, dist = _find_nearest_station(lat, lon)
+    st.session_state["rec_nearest_station"] = station_id
+    st.session_state["rec_nearest_dist"] = dist
+
+    if is_new_click:
+        st.rerun()
+
+    return lat, lon, station_id
+
+
+def _get_previous_map_selection() -> tuple[float, float, str] | None:
+    if "rec_click_lat" not in st.session_state or "rec_nearest_station" not in st.session_state:
+        return None
+    return (
+        st.session_state["rec_click_lat"],
+        st.session_state["rec_click_lon"],
+        st.session_state["rec_nearest_station"],
+    )
+
+
+def _render_recommendation_map(
+    center_lat: float | None = None,
+    center_lon: float | None = None,
+    station_id: str | None = None,
+    scored: list[dict] | None = None,
+    radius_km: float | None = None,
+    *,
+    allow_click: bool = True,
+) -> tuple[float, float, str] | None:
+    """Render the single tourism map used for both picking and results."""
+    if not _FOLIUM_AVAILABLE:
+        st.warning("📦 Cài đặt `folium` và `streamlit-folium` để xem bản đồ tương tác.")
+        return None
+
+    has_selection = center_lat is not None and center_lon is not None
+    map_lat = center_lat if center_lat is not None else st.session_state.get("rec_click_lat", 10.7769)
+    map_lon = center_lon if center_lon is not None else st.session_state.get("rec_click_lon", 106.7009)
+    station = LOCATIONS.get(station_id, {}) if station_id else {}
+    station_name = LOCATION_NAMES.get(station_id, station_id) if station_id else ""
 
     m = folium.Map(
-        location=[center_lat, center_lon],
-        zoom_start=10,
+        location=[map_lat, map_lon],
+        zoom_start=12 if has_selection else 10,
         tiles="CartoDB positron",
     )
 
-    # Add station markers
-    for loc_id, loc in LOCATIONS.items():
-        name = LOCATION_NAMES.get(loc_id, loc_id)
-        folium.Marker(
-            location=[loc["lat"], loc["lon"]],
-            tooltip=f"📡 Trạm UV: {name}",
-            icon=folium.Icon(color="blue", icon="cloud", prefix="fa"),
+    if has_selection and radius_km is not None:
+        folium.Circle(
+            location=[center_lat, center_lon],
+            radius=radius_km * 1000,
+            color="#3498db",
+            fill=True, fill_color="#3498db", fill_opacity=0.06,
+            weight=1.5,
+            tooltip=f"Bán kính tìm kiếm: {radius_km:.0f} km",
         ).add_to(m)
 
-    # If user previously clicked, show that marker
-    if "rec_click_lat" in st.session_state:
+    if has_selection:
         folium.Marker(
-            location=[st.session_state["rec_click_lat"], st.session_state["rec_click_lon"]],
+            location=[center_lat, center_lon],
             tooltip="📍 Vị trí bạn chọn",
             icon=folium.Icon(color="red", icon="map-pin", prefix="fa"),
         ).add_to(m)
 
-    map_data = st_folium(
-        m,
-        width='stretch',
-        height=350,
-        returned_objects=["last_clicked"],
-        key="rec_location_picker_map",
-    )
-
-    # Process click
-    if map_data and map_data.get("last_clicked"):
-        clicked = map_data["last_clicked"]
-        lat = clicked["lat"]
-        lon = clicked["lng"]
-
-        # Detect genuinely new click vs stale last_clicked replay
-        old_lat = st.session_state.get("rec_click_lat")
-        old_lon = st.session_state.get("rec_click_lon")
-        is_new_click = (
-            old_lat is None
-            or abs(lat - old_lat) > 1e-6
-            or abs(lon - old_lon) > 1e-6
-        )
-
-        st.session_state["rec_click_lat"] = lat
-        st.session_state["rec_click_lon"] = lon
-        station_id, dist = _find_nearest_station(lat, lon)
-        st.session_state["rec_nearest_station"] = station_id
-        st.session_state["rec_nearest_dist"] = dist
-
-        # Force rerun so the map re-renders with updated center & marker
-        if is_new_click:
-            st.rerun()
-
-        return lat, lon, station_id
-
-    # Return previous click if exists
-    if "rec_click_lat" in st.session_state and "rec_nearest_station" in st.session_state:
-        return (
-            st.session_state["rec_click_lat"],
-            st.session_state["rec_click_lon"],
-            st.session_state["rec_nearest_station"],
-        )
-
-    return None
-
-
-def _render_results_map(
-    center_lat: float,
-    center_lon: float,
-    station_id: str,
-    scored: list[dict],
-    radius_km: float,
-) -> None:
-    """Render the results map with scored tourist places."""
-    if not _FOLIUM_AVAILABLE:
-        st.warning("📦 Cài đặt `folium` và `streamlit-folium` để xem bản đồ tương tác.")
-        return
-
-    station = LOCATIONS.get(station_id, {})
-    station_name = LOCATION_NAMES.get(station_id, station_id)
-
-    m = folium.Map(
-        location=[center_lat, center_lon],
-        zoom_start=12,
-        tiles="CartoDB positron",
-    )
-
-    # Radius circle from user-clicked point
-    folium.Circle(
-        location=[center_lat, center_lon],
-        radius=radius_km * 1000,
-        color="#3498db",
-        fill=True, fill_color="#3498db", fill_opacity=0.06,
-        weight=1.5,
-        tooltip=f"Bán kính tìm kiếm: {radius_km:.0f} km",
-    ).add_to(m)
-
-    # User-selected point
-    folium.Marker(
-        location=[center_lat, center_lon],
-        tooltip="📍 Vị trí bạn chọn",
-        icon=folium.Icon(color="red", icon="map-pin", prefix="fa"),
-    ).add_to(m)
-
-    # Nearest station marker
     if station:
         folium.Marker(
             location=[station["lat"], station["lon"]],
@@ -323,9 +289,16 @@ def _render_results_map(
             ),
             icon=folium.Icon(color="blue", icon="cloud", prefix="fa"),
         ).add_to(m)
+    elif not has_selection:
+        for loc_id, loc in LOCATIONS.items():
+            name = LOCATION_NAMES.get(loc_id, loc_id)
+            folium.Marker(
+                location=[loc["lat"], loc["lon"]],
+                tooltip=f"📡 Trạm UV: {name}",
+                icon=folium.Icon(color="blue", icon="cloud", prefix="fa"),
+            ).add_to(m)
 
-    # Place markers
-    for p in scored:
+    for p in scored or []:
         if p.get("lat") is None or p.get("lon") is None:
             continue
         color = _get_marker_color(p["safe_hours_pct"])
@@ -360,7 +333,14 @@ def _render_results_map(
             icon=folium.Icon(color=color, icon="map-marker", prefix="fa"),
         ).add_to(m)
 
-    st_folium(m, width='stretch', height=450, returned_objects=[], key="rec_results_map")
+    map_data = st_folium(
+        m,
+        width='stretch',
+        height=450,
+        returned_objects=["last_clicked"] if allow_click else [],
+        key="rec_recommendation_map",
+    )
+    return _handle_map_click(map_data) if allow_click else None
 
 
 # -- Main render ---------------------------------------------------------------
@@ -397,18 +377,25 @@ def render(
         horizontal=True,
         key="rec_input_method",
     )
+    map_slot = st.empty()
 
     center_lat, center_lon, loc_sel = None, None, None
 
     if input_method == "🗺️ Chọn trên bản đồ":
         st.caption("👆 Nhấp vào bản đồ để chọn vị trí. Hệ thống sẽ tự động tìm trạm UV gần nhất.")
-        click_result = _render_location_picker()
+        click_result = _get_previous_map_selection()
+
+        if not click_result:
+            with map_slot.container():
+                click_result = _render_recommendation_map(allow_click=True)
         
         if click_result:
             center_lat, center_lon, loc_sel = click_result
             station_dist = st.session_state.get("rec_nearest_dist", 0)
 
             if station_dist > 50:
+                with map_slot.container():
+                    _render_recommendation_map(center_lat, center_lon, loc_sel, radius_km=radius_km)
                 st.warning(
                     f"⚠️ Vị trí bạn chọn cách trạm UV gần nhất ({LOCATION_NAMES.get(loc_sel, loc_sel)}) {station_dist:.1f} km. "
                     "Vui lòng chọn vị trí trong bán kính 50km so với trạm UV để đảm bảo độ chính xác."
@@ -515,6 +502,15 @@ def render(
     nearby = _filter_nearby_places(places, center_lat, center_lon, radius_km)
 
     if not nearby:
+        with map_slot.container():
+            _render_recommendation_map(
+                center_lat,
+                center_lon,
+                loc_sel,
+                scored=[],
+                radius_km=radius_km,
+                allow_click=input_method == "🗺️ Chọn trên bản đồ",
+            )
         st.info(
             f"Không có địa điểm du lịch trong bán kính **{radius_km:.0f} km** "
             f"tính từ vị trí đã chọn. Thử mở rộng bán kính."
@@ -526,15 +522,32 @@ def render(
     scored = scored[:10]  # Only show top 10 recommendations
 
     if not scored:
+        with map_slot.container():
+            _render_recommendation_map(
+                center_lat,
+                center_lon,
+                loc_sel,
+                scored=[],
+                radius_km=radius_km,
+                allow_click=input_method == "🗺️ Chọn trên bản đồ",
+            )
         st.info("Không có gợi ý cho khu vực đã chọn (không đủ dữ liệu dự báo).")
         return
 
-    # Results map
+    with map_slot.container():
+        _render_recommendation_map(
+            center_lat,
+            center_lon,
+            loc_sel,
+            scored,
+            radius_km,
+            allow_click=input_method == "🗺️ Chọn trên bản đồ",
+        )
+
     st.markdown(
         f"**Top {len(scored)} địa điểm** trong bán kính **{radius_km:.0f} km** "
         f"- sắp xếp theo điểm UV an toàn"
     )
-    _render_results_map(center_lat, center_lon, loc_sel, scored, radius_km)
 
     # Place cards
     st.divider()

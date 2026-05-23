@@ -32,6 +32,7 @@ _PLACES_PATH    = STATIC_DIR / "suggest_location.json"
 # -- Vietnamese place-type labels -----------------------------------------------
 _TYPE_LABELS = {
     "beach":             "Bãi biển",
+    "coastal_beach":     "Bãi biển ven bờ",
     "urban_park":        "Công viên đô thị",
     "museum":            "Bảo tàng",
     "shopping_mall":     "Trung tâm thương mại",
@@ -41,6 +42,14 @@ _TYPE_LABELS = {
     "mangrove_tour":     "Du lịch rừng ngập mặn",
     "coastal_viewpoint": "Điểm ngắm biển",
     "restaurant":        "Nhà hàng",
+    "eco_park":          "Công viên sinh thái",
+    "forest":            "Rừng",
+    "historical_site":   "Di tích lịch sử",
+    "nature_spot":       "Điểm thiên nhiên",
+    "outdoor_attraction":"Điểm tham quan ngoài trời",
+    "religious_site":    "Cơ sở tôn giáo",
+    "river_side":        "Ven sông",
+    "theme_park":        "Công viên giải trí",
 }
 
 _METRIC_HELP = {
@@ -216,56 +225,47 @@ def _render_diversity_analysis(scenario_results: list[dict]) -> None:
             type_counts[lbl] = type_counts.get(lbl, 0) + 1
             top10_by_scenario[sc_label][lbl] = top10_by_scenario[sc_label].get(lbl, 0) + 1
 
-    col_pie, col_bar = st.columns(2)
 
-    with col_pie:
-        labels = list(type_counts.keys())
-        values = list(type_counts.values())
-        fig_pie = go.Figure(go.Pie(
-            labels=labels, values=values,
-            hole=0.4,
-            textinfo="label+percent",
-            marker_colors=px.colors.qualitative.Set3,
-        ))
-        fig_pie.update_layout(
-            title="Phân phối loại địa điểm (tất cả kịch bản)",
-            height=320,
-            margin=dict(l=0, r=0, t=40, b=0),
-            paper_bgcolor="rgba(0,0,0,0)",
-        )
-        st.plotly_chart(fig_pie, width='stretch')
+    import pandas as pd
+    
+    # Sort values for a cleaner horizontal bar chart (ascending so largest is at the top)
+    sorted_types = sorted(type_counts.items(), key=lambda x: x[1])
+    labels = [x[0] for x in sorted_types]
+    values = [x[1] for x in sorted_types]
 
-        # Entropy score
-        total = sum(values) or 1
-        probs = [v / total for v in values]
-        import math
-        entropy = -sum(p * math.log2(p) for p in probs if p > 0)
-        max_entropy = math.log2(len(values)) if len(values) > 1 else 1.0
-        norm_entropy = entropy / max_entropy
-        st.metric("🎲 Diversity Entropy Score", f"{norm_entropy:.3f}",
-                  help="0 = chỉ một loại, 1 = phân phối đều hoàn toàn")
+    df_pie = pd.DataFrame({"Loại địa điểm": labels, "Số lượng": values})
+    
+    fig_pie = px.bar(
+        df_pie, 
+        y="Loại địa điểm", 
+        x="Số lượng", 
+        orientation="h",
+        color="Loại địa điểm",
+        color_discrete_sequence=px.colors.qualitative.Set3,
+        text="Số lượng"
+    )
+    fig_pie.update_layout(
+        title="Phân phối loại địa điểm (tất cả kịch bản)",
+        height=360,
+        margin=dict(l=0, r=10, t=40, b=0),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        showlegend=False,
+        xaxis_title=None,
+        yaxis_title=None
+    )
+    fig_pie.update_traces(textposition="outside")
+    st.plotly_chart(fig_pie, width='stretch')
 
-    with col_bar:
-        import pandas as pd
-        rows = []
-        for sc_id, t_counts in list(top10_by_scenario.items())[:10]:
-            for t, cnt in t_counts.items():
-                rows.append({"Kịch bản": sc_id, "Loại": t, "Số lượng": cnt})
-        if rows:
-            df_bar = pd.DataFrame(rows)
-            fig_stack = px.bar(
-                df_bar, x="Kịch bản", y="Số lượng", color="Loại",
-                title="Phân phối loại địa điểm top-10 kịch bản đầu",
-                color_discrete_sequence=px.colors.qualitative.Set3,
-            )
-            fig_stack.update_layout(
-                height=320,
-                margin=dict(l=0, r=0, t=40, b=0),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                xaxis_tickangle=-45,
-            )
-            st.plotly_chart(fig_stack, width='stretch')
+    # Entropy score
+    total = sum(values) or 1
+    probs = [v / total for v in values]
+    import math
+    entropy = -sum(p * math.log2(p) for p in probs if p > 0)
+    max_entropy = math.log2(len(values)) if len(values) > 1 else 1.0
+    norm_entropy = entropy / max_entropy
+    st.metric("🎲 Diversity Entropy Score", f"{norm_entropy:.3f}",
+              help="0 = chỉ một loại, 1 = phân phối đều hoàn toàn")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -273,7 +273,7 @@ def _render_diversity_analysis(scenario_results: list[dict]) -> None:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _render_test_case_results(scenario_results: list[dict]) -> None:
-    st.subheader("🧪 Kết quả kịch bản kiểm thử")
+    st.subheader("Kết quả kịch bản kiểm thử")
 
     n_pass  = sum(1 for s in scenario_results if s["passed"])
     n_total = len(scenario_results)
@@ -374,12 +374,11 @@ def _render_score_breakdown(scenario_results: list[dict]) -> None:
     uv           = sc["context"]["uv_forecast"]
     has_rain     = sc["context"].get("is_raining", False)
     temperature  = sc["context"].get("temperature", 28)
-    safe_minutes = get_safe_exposure_time(skin_type, uv)
-    is_safe_hour = safe_minutes >= activity_min
+    raw_safe_min = get_safe_exposure_time(skin_type, uv)
 
     st.info(
-        f"**Loại da:** {skin_type} · **UV:** {uv} · "
-        f"**Thời gian an toàn:** {safe_minutes:.1f} phút · "
+        f"**Loại da:** {skin_type} · **UV gốc:** {uv} · "
+        f"**Thời gian an toàn (không che chắn):** {raw_safe_min:.1f} phút · "
         f"**Hoạt động:** {activity_min} phút · "
         f"**Trời mưa:** {'Có' if has_rain else 'Không'} · "
         f"**Nhiệt độ:** {temperature}°C"
@@ -387,22 +386,17 @@ def _render_score_breakdown(scenario_results: list[dict]) -> None:
 
     rows = []
     for r in sc["top5"]:
-        shade_cov  = 50  # default from place
-        shade_bon  = 1.0 + (shade_cov / 200.0)
-        indoor_bon = 1.3 if r.get("indoor_option") else 1.0
-        rain_pen   = 0.7 if (has_rain and not r.get("indoor_option")) else 1.0
-        heat_pen   = 0.8 if (temperature > 36 and not r.get("has_shade") and not r.get("indoor_option")) else 1.0
-        safe_ratio = 1.0 if is_safe_hour else (0.2 if r.get("indoor_option") else 0.0)
-
+        # Use real scoring components stored during evaluation
         rows.append({
-            "name":       r["name"],
-            "type":       _TYPE_LABELS.get(r.get("type",""), r.get("type","")),
-            "safe_ratio": safe_ratio,
-            "shade_bon":  shade_bon,
-            "indoor_bon": indoor_bon,
-            "rain_pen":   rain_pen,
-            "heat_pen":   heat_pen,
-            "score":      r.get("score", 0),
+            "name":             r["name"],
+            "type":             _TYPE_LABELS.get(r.get("type",""), r.get("type","")),
+            "effective_uv":     r.get("effective_uv", uv),
+            "safe_minutes":     r.get("safe_minutes", 0),
+            "safe_ratio":       r.get("safe_ratio", r.get("safe_pct", 0) / 100.0),
+            "thermal_modifier": r.get("thermal_modifier", 1.0),
+            "rain_modifier":    r.get("rain_modifier", 1.0),
+            "shade_pct":        r.get("shade_coverage_pct", 50),
+            "score":            r.get("score", 0),
         })
 
     import pandas as pd
@@ -410,11 +404,9 @@ def _render_score_breakdown(scenario_results: list[dict]) -> None:
 
     fig = go.Figure()
     components = [
-        ("UV Safety Ratio", "safe_ratio",  "#2ecc71"),
-        ("Shade Bonus",     "shade_bon",   "#3498db"),
-        ("Indoor Bonus",    "indoor_bon",  "#9b59b6"),
-        ("Rain Penalty",    "rain_pen",    "#e67e22"),
-        ("Heat Penalty",    "heat_pen",    "#e74c3c"),
+        ("UV Safety Ratio",    "safe_ratio",       "#2ecc71"),
+        ("Thermal Modifier",   "thermal_modifier",  "#e74c3c"),
+        ("Rain Modifier",      "rain_modifier",     "#e67e22"),
     ]
     for label, col, color in components:
         fig.add_trace(go.Bar(
@@ -439,11 +431,14 @@ def _render_score_breakdown(scenario_results: list[dict]) -> None:
     st.plotly_chart(fig, width='stretch')
 
     # Table of exact values
-    display_df = df[["name", "type", "safe_ratio", "shade_bon", "indoor_bon", "rain_pen", "heat_pen", "score"]].copy()
-    display_df.columns = ["Địa điểm", "Loại", "UV Safety", "Shade Bonus", "Indoor Bonus", "Rain Penalty", "Heat Penalty", "Score"]
+    display_df = df[["name", "type", "effective_uv", "safe_minutes", "safe_ratio",
+                      "shade_pct", "thermal_modifier", "rain_modifier", "score"]].copy()
+    display_df.columns = ["Địa điểm", "Loại", "UV Hiệu dụng", "Phút an toàn",
+                           "UV Safety Ratio", "Shade %", "Thermal Mod.", "Rain Mod.", "Score"]
     st.dataframe(display_df.style.format({
-        "UV Safety": "{:.3f}", "Shade Bonus": "{:.3f}", "Indoor Bonus": "{:.3f}",
-        "Rain Penalty": "{:.3f}", "Heat Penalty": "{:.3f}", "Score": "{:.4f}",
+        "UV Hiệu dụng": "{:.3f}", "Phút an toàn": "{:.1f}",
+        "UV Safety Ratio": "{:.4f}", "Shade %": "{:.0f}",
+        "Thermal Mod.": "{:.2f}", "Rain Mod.": "{:.2f}", "Score": "{:.4f}",
     }), width='stretch', hide_index=True)
 
 
