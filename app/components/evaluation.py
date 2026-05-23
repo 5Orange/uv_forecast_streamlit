@@ -307,7 +307,7 @@ def _render_test_case_results(scenario_results: list[dict]) -> None:
         ))
         fig_gauge.update_layout(height=160, margin=dict(l=20, r=20, t=20, b=0),
                                 paper_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_gauge, width='stretch')
+        st.plotly_chart(fig_gauge, width='stretch', theme=None)
 
     # Filter radio
     view = st.radio("Hiển thị kịch bản", ["Tất cả", "✅ Đạt", "❌ Không đạt"], horizontal=True)
