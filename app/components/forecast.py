@@ -349,7 +349,7 @@ def _render_cards_and_detail(data: pd.DataFrame, dates: list, locs_in_fc: list, 
 def render(selected_locs: list[str], regression_model: str = "Random Forest", use_serving: bool = False):
     st.header("🔮 Dự báo UV 7 ngày (Trực tiếp)")
     st.caption(
-        f"Dự báo thời gian thực bằng **{regression_model}**) "
+        f"Dự báo thời gian thực bằng **{regression_model}** "
     )
     if use_serving:
         status = get_serving_endpoint_status(regression_model)

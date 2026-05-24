@@ -69,15 +69,16 @@ class DataBrickModelClient:
         features_df = features_df.copy()
         features_df['model_type'] = self._get_model_key(model_name)
 
-        # Serialize timestamp for JSON (router schema requires datetime as string)
         if 'timestamp' in features_df.columns:
             features_df['timestamp'] = features_df['timestamp'].astype(str)
 
-        # Filter to exact router schema columns (avoids schema enforcement errors)
         cols_to_send = [c for c in _ROUTER_SCHEMA_COLS if c in features_df.columns]
-        records = features_df[cols_to_send].to_dict(orient="records")
+        clean_df = features_df[cols_to_send].astype(object)
+        
+        clean_df = clean_df.where(pd.notnull(clean_df), None)
+
         payload = {
-            "dataframe_records": records,
+            "dataframe_split": clean_df.to_dict(orient="split")
         }
 
         for attempt in range(max_retries):
@@ -114,6 +115,7 @@ class DataBrickModelClient:
                 st.session_state['last_serving_error'] = f"Request timeout ({timeout}s)"
                 return None
             except Exception as e:
+                st.error(f"Error {e}")
                 st.session_state['last_serving_error'] = str(e)
                 if attempt < max_retries - 1:
                     wait_time = min(2 ** attempt, 8)

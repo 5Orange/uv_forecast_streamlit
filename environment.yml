@@ -24,8 +24,8 @@ dependencies:
   - statsmodels
   - pip
   - pip:
-    - streamlit
-    - plotly
+    - streamlit==1.57.0
+    - plotly==5.24.1
     - shap
     - catboost
     - prophet

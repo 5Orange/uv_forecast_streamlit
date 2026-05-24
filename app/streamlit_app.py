@@ -171,31 +171,38 @@ Air Quality (Ozone, Aerosol) ----┘      - pvlib Solar Position (zenith, elevat
     """)
 
         st.subheader("Chi tiết đặc trưng regression cốt lõi")
-        st.info("Danh sách là các features dùng trực tiếp để train/inference regression. UV lag/rolling bị loại để tránh data leakage.")
+        st.info("Danh sách các features dùng trực tiếp để train/inference regression.")
         import pandas as pd
         feature_meta = {
-            "cos_solar_zenith": ("1. Solar Geometry", "cos(zenith)", "Cosin góc thiên đỉnh, yếu tố vật lý quan trọng nhất của UV."),
-            "doy_sin": ("1. Solar Geometry", "sin(2pi*doy/365)", "Mùa vụ theo chu kỳ năm."),
-            "temperature_2m": ("2. Atmospheric Base", "raw", "Nhiệt độ không khí tại 2m."),
-            "relative_humidity_2m": ("2. Atmospheric Base", "raw", "Độ ẩm tương đối tại 2m."),
-            "cloud_cover": ("2. Atmospheric Base", "raw", "Độ che phủ mây tổng."),
-            "solar_cloud_interaction": ("3. Interaction", "cos_solar_zenith*(1-cloud_cover)", "Tương tác vị trí mặt trời và mây"),
-            "ozone_anomaly": ("2. Atmospheric Base", "ozone-monthly_baseline", "Độ lệch ozone so với trung bình tháng"),
-            "pressure_msl": ("2. Atmospheric Base", "raw", "Áp suất mực nước biển"),
-            "wind_speed_10m": ("2. Atmospheric Base", "raw", "Tốc độ gió 10m."),
-            "altitude_m": ("4. Spatial", "location metadata", "Độ cao địa điểm."),
-            "cos_zenith_squared": ("5. Nonlinear", "cos_solar_zenith^2", "Thành phần phi tuyến của góc thiên đỉnh."),
-            "cloud_attenuation_exp": ("5. Nonlinear", "exp(-cloud_cover/100)", "Suy giảm UV theo mây dạng mũ"),
-            "temp_humidity_product": ("3. Interaction", "temperature_2m*relative_humidity_2m", "Tương tác nhiệt độ-độ ẩm."),
-            "pressure_cloud_interaction": ("3. Interaction", "pressure_msl*(1-cloud_cover/100)", "Tương tác áp suất và mây."),
-            "temperature_2m_ema": ("6. Smoothed Trend", "EMA(alpha=0.3)", "Xu hương mượt nhiệt độ."),
-            "cloud_cover_ema": ("6. Smoothed Trend", "EMA(alpha=0.3)", "Xu hướng mượt độ che mây."),
-            "ozone_ema": ("6. Smoothed Trend", "EMA(alpha=0.3)", "Xu hướng mượt ozone."),
-            "altitude_solar_interaction": ("3. Interaction", "altitude_m*cos_solar_zenith/1000", "Hiệu ứng độ cao theo vị trí mặt trời."),
-            "ozone_depletion_risk": ("7. Binary Indicator", "(ozone<Q25).astype(int)", "Cờ rủi ro suy giảm ozone."),
-            "air_quality_combined": ("7. Binary Indicator", "normalized air-quality blend", "Chỉ báo chất lượng không khí tổng hợp."),
-            "is_raining": ("7. Binary Indicator", "(precipitation>0).astype(int)", "Cờ đang mưa."),
-            "cloud_cover_change_1h": ("8. Momentum", "cloud_cover.diff(1)", "Biến thiên mây theo giờ."),
+            "cos_solar_zenith": ("1. Vị trí & chu kỳ Mặt Trời", "cos(zenith)", "Cosin của góc thiên đỉnh Mặt Trời - yếu tố quan trọng nhất quyết định cường độ bức xạ UV."),
+            "doy_sin": ("1. Vị trí & chu kỳ Mặt Trời", "sin(2pi*doy/365)", "Biểu diễn chu kỳ mùa trong năm, giúp mô hình nắm được tính mùa vụ của UV."),
+
+            "temperature_2m": ("2. Điều kiện khí quyển", "raw", "Nhiệt độ không khí tại độ cao 2m."),
+            "relative_humidity_2m": ("2. Điều kiện khí quyển", "raw", "Độ ẩm tương đối của không khí tại độ cao 2m."),
+            "cloud_cover": ("2. Điều kiện khí quyển", "raw", "Tỷ lệ che phủ của mây trên bầu trời."),
+            "ozone_anomaly": ("2. Điều kiện khí quyển", "ozone-monthly_baseline", "Độ lệch của nồng độ ozone so với mức trung bình theo tháng."),
+            "pressure_msl": ("2. Điều kiện khí quyển", "raw", "Áp suất khí quyển quy về mực nước biển."),
+            "wind_speed_10m": ("2. Điều kiện khí quyển", "raw", "Tốc độ gió tại độ cao 10m."),
+
+            "solar_cloud_interaction": ("3. Tác động kết hợp", "cos_solar_zenith*(1-cloud_cover)", "Kết hợp giữa vị trí Mặt Trời và độ che phủ mây để phản ánh lượng UV thực tế đến mặt đất."),
+            "temp_humidity_product": ("3. Tác động kết hợp", "temperature_2m*relative_humidity_2m", "Tương tác giữa nhiệt độ và độ ẩm, ảnh hưởng đến trạng thái khí quyển."),
+            "pressure_cloud_interaction": ("3. Tác động kết hợp", "pressure_msl*(1-cloud_cover/100)", "Tác động kết hợp giữa áp suất khí quyển và độ che phủ mây."),
+            "altitude_solar_interaction": ("3. Tác động kết hợp", "altitude_m*cos_solar_zenith/1000", "Ảnh hưởng của độ cao địa hình kết hợp với vị trí Mặt Trời đến cường độ UV."),
+
+            "altitude_m": ("4. Đặc điểm vị trí", "location metadata", "Độ cao địa hình so với mực nước biển."),
+
+            "cos_zenith_squared": ("5. Biến đổi phi tuyến", "cos_solar_zenith^2", "Biến đổi bậc hai của góc thiên đỉnh để mô hình học được quan hệ không tuyến tính."),
+            "cloud_attenuation_exp": ("5. Biến đổi phi tuyến", "exp(-cloud_cover/100)", "Mô hình hóa sự suy giảm UV do mây theo dạng hàm mũ."),
+
+            "temperature_2m_ema": ("6. Xu hướng (làm mượt)", "EMA(alpha=0.3)", "Giá trị nhiệt độ đã được làm mượt để phản ánh xu hướng thay vì biến động ngắn hạn."),
+            "cloud_cover_ema": ("6. Xu hướng (làm mượt)", "EMA(alpha=0.3)", "Độ che phủ mây được làm mượt để thể hiện xu hướng ổn định hơn."),
+            "ozone_ema": ("6. Xu hướng (làm mượt)", "EMA(alpha=0.3)", "Giá trị ozone đã được làm mượt để giảm nhiễu ngắn hạn."),
+
+            "ozone_depletion_risk": ("7. Biến điều kiện (có/không)", "(ozone<Q25).astype(int)", "Cho biết nguy cơ suy giảm ozone (1: thấp bất thường, 0: bình thường)."),
+            "air_quality_combined": ("7. Biến điều kiện (có/không)", "normalized air-quality blend", "Chỉ báo tổng hợp về chất lượng không khí dựa trên nhiều yếu tố."),
+            "is_raining": ("7. Biến điều kiện (có/không)", "(precipitation>0).astype(int)", "Cho biết có mưa hay không (1: có, 0: không)."),
+
+            "cloud_cover_change_1h": ("8. Mức thay đổi theo thời gian", "cloud_cover.diff(1)", "Mức thay đổi độ che phủ mây trong 1 giờ gần nhất."),
         }
         features_data = []
         for feat in FINAL_FEATURES:
@@ -205,7 +212,6 @@ Air Quality (Ozone, Aerosol) ----┘      - pvlib Solar Position (zenith, elevat
         for group_name, group_df in df_features.groupby("Nhóm", sort=False):
             with st.expander(f"🔍 {group_name} ({len(group_df)} features)"):
                 st.dataframe(group_df[["Đặc trưng", "Công thức", "Ý nghĩa"]], width='stretch', hide_index=True)
-        st.caption(f"tong so feature dang dung: {len(FINAL_FEATURES)}")
 
 elif active_tab == "📊 Phân tích dữ liệu":
     with main_content.container():
@@ -230,8 +236,14 @@ elif active_tab == "🔮 Dự báo (Trực tiếp)":
                     key="forecast_model_selector",
                     help="Mô hình dùng để dự báo chỉ số UV liên tục (RMSE, R2 xem tab Kết quả mô hình)",
                 )
+            use_serving_rec = st.checkbox(
+                "Sử dụng Databricks",
+                value=False,
+                key="use_serving_rec",
+                help="Enable to use Databricks model Serving",
+            )
             with st.spinner("⏳ Đang tải dữ liệu..."):
-                forecast.render(selected_locs, selected_regression_model, use_serving=False)
+                forecast.render(selected_locs, selected_regression_model, use_serving=use_serving_rec)
         else:
             st.error("Không tìm thấy mô hình regression trong thư mục models/optimized/. Hãy train mô hình trước.")
 

@@ -586,20 +586,3 @@ def render(
                 if p["maps_url"]:
                     st.markdown(f"[📍 Google Maps]({p['maps_url']})")
 
-    # -- WHO health warnings ------------------------------------------------
-    st.divider()
-    st.subheader("⚠️ Cảnh báo sức khỏe tổng thể")
-    locs_in_fc = [l for l in selected_locs if l in fc["location_id"].unique()]
-    for loc_id in locs_in_fc:
-        loc_today_w = today[today["location_id"] == loc_id]
-        if loc_today_w.empty:
-            continue
-        peak_cat = loc_today_w.loc[loc_today_w["uv_predicted"].idxmax(), "uv_category"]
-        advice   = WHO_ADVICE.get(peak_cat, "")
-        mess     = f"**{LOCATION_NAMES.get(loc_id, loc_id)}** - {peak_cat}: {advice}"
-        if peak_cat in ["Very High", "Extreme"]:
-            st.error(mess)
-        elif peak_cat == "High":
-            st.warning(mess)
-        else:
-            st.success(mess)
