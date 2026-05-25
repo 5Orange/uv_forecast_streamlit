@@ -200,9 +200,14 @@ def _render_baseline_comparison(scenario_results: list[dict]) -> None:
         margin=dict(l=10, r=10, t=30, b=10),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
+        uniformtext_minsize=16, 
+        uniformtext_mode='show'
     )
-    fig.update_traces(textposition="outside")
-    st.plotly_chart(fig, width='stretch')
+    fig.update_xaxes(range=[0, 1.15])
+    fig.update_traces(textposition="outside", textfont_size=16)
+    # Clean up facet titles (e.g. "Chỉ số=Precision@5" -> "Precision@5")
+    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+    st.plotly_chart(fig, width='stretch', theme=None)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -228,34 +233,38 @@ def _render_diversity_analysis(scenario_results: list[dict]) -> None:
 
     import pandas as pd
     
-    # Sort values for a cleaner horizontal bar chart (ascending so largest is at the top)
-    sorted_types = sorted(type_counts.items(), key=lambda x: x[1])
+    # Sort values descending for a column chart (highest on the left)
+    sorted_types = sorted(type_counts.items(), key=lambda x: x[1], reverse=True)
     labels = [x[0] for x in sorted_types]
     values = [x[1] for x in sorted_types]
 
-    df_pie = pd.DataFrame({"Loại địa điểm": labels, "Số lượng": values})
+    df_col = pd.DataFrame({"Loại địa điểm": labels, "Số lượng": values})
     
-    fig_pie = px.bar(
-        df_pie, 
-        y="Loại địa điểm", 
-        x="Số lượng", 
-        orientation="h",
-        color="Loại địa điểm",
-        color_discrete_sequence=px.colors.qualitative.Set3,
+    fig_col = px.bar(
+        df_col, 
+        x="Loại địa điểm", 
+        y="Số lượng", 
         text="Số lượng"
     )
-    fig_pie.update_layout(
+    
+    # Apply colors directly to the single trace to prevent thin bars
+    colors = (px.colors.qualitative.Set3 * 3)[:len(df_col)]
+    fig_col.update_traces(textposition="outside", textfont_size=14, marker_color=colors)
+    fig_col.update_layout(
         title="Phân phối loại địa điểm (tất cả kịch bản)",
-        height=360,
-        margin=dict(l=0, r=10, t=40, b=0),
+        height=500,
+        margin=dict(l=10, r=10, t=50, b=120),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
         xaxis_title=None,
-        yaxis_title=None
+        yaxis_title=None,
+        xaxis_tickangle=-45
     )
-    fig_pie.update_traces(textposition="outside")
-    st.plotly_chart(fig_pie, width='stretch')
+    if values:
+        fig_col.update_yaxes(range=[0, max(values) * 1.25])
+        
+    st.plotly_chart(fig_col, width='stretch', theme=None)
 
     # Entropy score
     total = sum(values) or 1
@@ -264,7 +273,7 @@ def _render_diversity_analysis(scenario_results: list[dict]) -> None:
     entropy = -sum(p * math.log2(p) for p in probs if p > 0)
     max_entropy = math.log2(len(values)) if len(values) > 1 else 1.0
     norm_entropy = entropy / max_entropy
-    st.metric("🎲 Diversity Entropy Score", f"{norm_entropy:.3f}",
+    st.metric("🎲 Điểm entropy về độ đa dạng", f"{norm_entropy:.3f}",
               help="0 = chỉ một loại, 1 = phân phối đều hoàn toàn")
 
 
@@ -378,7 +387,7 @@ def _render_score_breakdown(scenario_results: list[dict]) -> None:
 
     st.info(
         f"**Loại da:** {skin_type} · **UV gốc:** {uv} · "
-        f"**Thời gian an toàn (không che chắn):** {raw_safe_min:.1f} phút · "
+        f"**Ước lượng giới hạn phơi nhiễm (không che chắn):** {raw_safe_min:.1f} phút · "
         f"**Hoạt động:** {activity_min} phút · "
         f"**Trời mưa:** {'Có' if has_rain else 'Không'} · "
         f"**Nhiệt độ:** {temperature}°C"
@@ -489,7 +498,7 @@ def render() -> None:
         "📊 Tổng quan chỉ số",
         "🏆 So sánh Baseline",
         "🎨 Đa dạng gợi ý",
-        "🧪 Kết quả kịch bản",
+        "🔥 Kết quả kịch bản",
         "🔬 Chi tiết điểm số",
     ])
 

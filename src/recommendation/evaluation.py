@@ -75,8 +75,9 @@ class AccuracyMetrics:
             return 0
 
         dcg  = sum(gain(r) / math.log2(i + 2) for i, r in enumerate(top_k))
-        # Ideal DCG: best possible ordering
-        ideal_gains = sorted([2] * len(should) + [1] * max(0, k - len(should)), reverse=True)[:k]
+        # Ideal DCG from the same candidate list and gain definition as DCG.
+        # This keeps NDCG normalized even when multiple items share one place type.
+        ideal_gains = sorted((gain(r) for r in recommendations), reverse=True)[:k]
         idcg = sum(g / math.log2(i + 2) for i, g in enumerate(ideal_gains))
         return (dcg / idcg) if idcg > 0 else 0.0
 
@@ -316,6 +317,7 @@ def run_evaluation(
 
     # Build naive popularity from catalog position (first items are most visited)
     popularity = {p["name"]: max(1, len(catalog) - i) for i, p in enumerate(catalog)}
+    random.seed(42)
 
     all_recs:          list[Recommendations] = []
     scenario_results:  list[dict]            = []

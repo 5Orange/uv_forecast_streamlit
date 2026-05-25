@@ -5,10 +5,10 @@
 ### 1.1. Kiến trúc hệ thống
 *   **WHAT:** Hệ thống được thiết kế chia làm hai phần rõ rệt: Backend xử lý dữ liệu/mô hình (`UV_analysis`) và Frontend phục vụ tương tác người dùng (`UV_analysis_UI` sử dụng Streamlit).
 *   **WHY:** Thiết kế Decoupled (tách rời) này giúp dễ dàng mở rộng (scalability). Người phát triển có thể thay đổi, huấn luyện lại mô hình ở Backend mà không làm sập giao diện UI.
-*   **HOW:** Dữ liệu thô từ nhiều nguồn được xử lý qua Data Pipeline (`merger.py`, `engr.py`). Sau đó, 11 mô hình hồi quy (Regression Models) được huấn luyện để dự báo cường độ UV. Frontend truy xuất các kết quả dự báo này (qua batch hoặc API serving) và kết nối với module địa điểm (Tourist Catalog) để đưa ra các phân tích (EDA, Results) và gợi ý (Forecast, Recommendation).
+*   **HOW:** Dữ liệu thô từ nhiều nguồn được xử lý qua Data Pipeline (`merger.py`, `engr.py`). Sau đó, 11 mô hình tối ưu hóa được huấn luyện/đánh giá để dự báo cường độ UV: `rf`, `dt`, `xgb`, `lgb`, `catboost`, `lstm`, `gru`, `bilstm`, `cnn_lstm`, `attention_lstm`, `prophet_lgb`. Frontend tải mô hình cục bộ hoặc gọi Databricks Serving, lấy dữ liệu dự báo trực tiếp từ Open-Meteo, và kết nối với Tourist Catalog để hiển thị EDA, model results, forecast, recommendation và system assessment.
 
 ### 1.2. Đánh giá Ưu nhược điểm & Tính ứng dụng
-*   **Ưu điểm:** Tích hợp đa nguồn dữ liệu thời gian thực và lịch sử (Open-Meteo, OpenUV, WeatherBit). Áp dụng tính toán toán học chuẩn mực cho cả vị trí địa lý (pvlib) và sinh học (ScanSkinAI, WHO).
+*   **Ưu điểm:** Backend tích hợp Open-Meteo, WeatherBit, OpenUV và Open-Meteo Air Quality trong pipeline dữ liệu. Frontend forecast hiện dùng Open-Meteo Forecast + Air Quality API để tạo dữ liệu đầu vào theo thời gian thực, sau đó dùng `pvlib` và công thức MED/WHO để tính khuyến nghị an toàn.
 *   **Nhược điểm:** Mức độ phụ thuộc vào API bên thứ 3 cao; nếu một trong các API thay đổi cấu trúc, pipeline `merger.py` có nguy cơ bị lỗi.
 *   **Ứng dụng thực tế:** Đặc biệt hữu ích ở các nước nhiệt đới (như Việt Nam). Có giá trị lớn đối với du lịch bền vững và y tế cộng đồng (phòng chống ung thư da).
 
@@ -26,48 +26,41 @@
     *   **Xử lý Missing Data:** Áp dụng forward-fill (`ffill(limit=3)`) cho các biến liên tục như nhiệt độ, độ ẩm để lấp đầy các khoảng thời gian bị thiếu sót (gap) ngắn.
     *   **Solar Position (pvlib):** Thuật toán gọi `pvlib.solarposition` để tính toán góc phương vị (`azimuth`), góc cao (`elevation`), và góc thiên đỉnh (`zenith`). `cos(zenith)` tỷ lệ thuận với lượng bức xạ mặt trời xuyên qua khí quyển.
 
-#### B. 23 Đặc trưng Cốt lõi (23 Core Features) trong `engr.py`
-Để mô hình học máy đạt độ chính xác cao nhất, hệ thống đã kỹ sư hóa 23 đặc trưng (features) cốt lõi, được phân loại thành 4 nhóm chính. Việc lựa chọn các đặc trưng này dựa chặt chẽ trên tính chất vật lý khí quyển và chuỗi thời gian:
+#### B. Bộ đặc trưng hiện tại trong `config.FINAL_22_FEATURES`
+Mã hiện tại dùng 22 đặc trưng chống rò rỉ dữ liệu cho suy luận frontend và huấn luyện tối ưu. Các biến UV lag/rolling và các biến bức xạ đo được (`shortwave_radiation`, `direct_radiation`, `clearness_index`, `uv_clear_sky_ratio`, v.v.) được loại khỏi `FINAL_22_FEATURES` vì có nguy cơ leakage hoặc không có sẵn ổn định tại thời điểm dự báo.
 
 **Nhóm 1: Đặc trưng Thời gian (Temporal Features)**
 *Tại sao sử dụng:* Thời gian tuyến tính (1, 2, 3... 23, 24) làm mất đi tính tuần hoàn tự nhiên (ví dụ 23h đêm rất gần với 1h sáng). Việc biến đổi thời gian giúp mô hình học được chu kỳ ngày/đêm và chu kỳ các mùa trong năm một cách trơn tru.
-*   **1. `hour_sin`**: Khía cạnh hình sin của giờ trong ngày.
-*   **2. `hour_cos`**: Khía cạnh hình cos của giờ trong ngày.
-*   **3. `month_sin`**: Khía cạnh hình sin của tháng trong năm.
-*   **4. `month_cos`**: Khía cạnh hình cos của tháng trong năm.
-*   **5. `doy_sin`**: Khía cạnh hình sin của ngày trong năm (day of year).
-*   **6. `doy_cos`**: Khía cạnh hình cos của ngày trong năm.
-*   **7. `day_fraction`**: Tỷ lệ phần thời gian của ban ngày đã trôi qua. Đặc trưng này chuẩn hóa được vị trí thời điểm hiện tại so với lúc mặt trời mọc và lặn (điều mà `hour` đơn thuần không làm được vì bình minh thay đổi theo mùa).
-*   **8. `hours_since_sunrise`**: Số giờ tính từ lúc mặt trời mọc.
+*   **Trong `FINAL_22_FEATURES`:** chỉ còn `doy_sin` được dùng trực tiếp để biểu diễn mùa. Các biến `hour_sin`, `hour_cos`, `month_sin`, `month_cos`, `doy_cos`, `day_fraction`, `hours_since_sunrise` vẫn có thể được tạo trong `FeatureEngineer`, nhưng không nằm trong bộ đặc trưng cuối cho mô hình tối ưu hiện tại.
 
 **Nhóm 2: Bức xạ & Vị trí Mặt trời (Solar & Radiation Features)**
 *Tại sao sử dụng:* Tia UV tới mặt đất phụ thuộc tuyệt đối vào việc mặt trời đang đứng ở góc nào so với mặt đất và khoảng cách tia sáng phải xuyên qua lớp khí quyển.
 *   **9. `cos_solar_zenith`**: Cosin của góc thiên đỉnh. Đây là **đặc trưng quan trọng nhất**, tỷ lệ thuận trực tiếp với cường độ bức xạ.
-*   **10. `solar_elevation`**: Góc cao của mặt trời so với chân trời.
-*   **11. `air_mass`**: Khối lượng không khí mà tia sáng phải đi qua, tính bằng công thức: (1 / cos_zenith). Lớp không khí càng dày (lúc bình minh/hoàng hôn), UV càng bị cản lại nhiều.
-*   **12. `clearness_index`**: Chỉ số độ trong suốt của bầu trời (tỷ lệ bức xạ thực tế so với bức xạ lý thuyết ngoài không gian).
-*   **13. `solar_cloud_interaction`**: Sự tương tác trực tiếp: `cos_solar_zenith * (1 - cloud_cover)`. Đặc trưng này kết hợp mô phỏng vật lý sự che khuất của mây vào vị trí mặt trời.
+*   **10. `cos_zenith_squared`**: Thành phần phi tuyến của góc mặt trời.
+*   **11. `solar_cloud_interaction`**: `cos_solar_zenith * (1 - cloud_cover)`, mô phỏng tương tác giữa góc mặt trời và mây.
+*   **12. `cloud_attenuation_exp`**: Cloud Modification Factor theo Kasten & Czeplak: `1 - 0.75 * (cloud_cover/100)^3.4`.
+*   **Ghi chú:** `solar_elevation`, `air_mass`, `clearness_index` có thể được tạo trong pipeline nhưng không thuộc `FINAL_22_FEATURES`.
 
 **Nhóm 3: Khí quyển & Môi trường (Atmospheric Features)**
 *Tại sao sử dụng:* Mây, tầng ozone và khói bụi là những "tấm khiên" tự nhiên hấp thụ hoặc tán xạ tia tử ngoại trước khi chúng chạm đất.
 *   **14. `temperature_2m`**: Nhiệt độ không khí.
 *   **15. `relative_humidity_2m`**: Độ ẩm tương đối.
-*   **16. `cloud_opacity`**: Độ đục của mây. Được tính bằng trung bình có trọng số của mây tầng thấp, trung và cao. Mây tầng thấp thường đặc và cản UV mạnh hơn.
-*   **17. `ozone_anomaly`**: Độ lệch của hàm lượng Ozone hiện tại so với trung bình tháng. Ozone là yếu tố chủ chốt hấp thụ tia UV-B độc hại.
-*   **18. `aerosol_uv_attenuation`**: Độ suy giảm UV do bụi mịn và các hạt lơ lửng (Aerosol Optical Depth). Rất hữu ích tại các khu vực đô thị ô nhiễm.
+*   **16. `ozone_anomaly`**: Độ lệch ozone so với baseline trung bình theo tháng và địa điểm.
+*   **17. `pressure_msl`**: Áp suất mực nước biển, đại diện trạng thái hệ thời tiết.
+*   **18. `wind_speed_10m`**: Tốc độ gió, liên quan phân tán aerosol và trạng thái thời tiết.
+*   **19. `temp_humidity_product`**: Tương tác nhiệt độ - độ ẩm.
+*   **20. `pressure_cloud_interaction`**: Tương tác áp suất - mây.
+*   **21. `temperature_2m_ema`, `cloud_cover_ema`, `ozone_ema`**: Trung bình mũ để mô tả quán tính gần đây của thời tiết/khí quyển.
+*   **22. `altitude_solar_interaction`, `ozone_depletion_risk`, `air_quality_combined`, `is_raining`, `cloud_cover_change_1h`**: Các biến tương tác, rủi ro ozone thấp, chất lượng không khí, mưa và xu hướng mây.
 
 **Nhóm 4: Đặc trưng Chuỗi thời gian (Lag, Rolling & Trend Features)**
 *Tại sao sử dụng:* UV có tính tự tương quan (autocorrelation) cao. Bức xạ của giờ hiện tại phụ thuộc rất lớn vào xu hướng của các giờ trước đó.
-*   **19. `uv_lag_1h`**: Chỉ số UV của 1 giờ trước. Giúp mô hình nắm bắt "quán tính" của hệ thống thời tiết.
-*   **20. `uv_lag_24h`**: Chỉ số UV của cùng giờ ngày hôm qua. Hữu ích cho việc dự báo các hình thái thời tiết ổn định kéo dài qua nhiều ngày.
-*   **21. `uv_rolling_mean_3h`**: Trung bình UV trong 3 giờ gần nhất. Tính năng này giúp làm mượt các nhiễu động ngẫu nhiên.
-*   **22. `uv_diff_1h`**: Đạo hàm bậc 1 của UV so với giờ trước (tốc độ thay đổi). Chỉ báo mô hình biết UV đang trong pha tăng tốc hay lao dốc.
-*   **23. `cloud_cover_change_1h`**: Sự biến thiên của độ che phủ mây. Nếu đám mây đột ngột kéo đến che lấp bầu trời, UV sẽ rớt mạnh dù mặt trời đang ở trên đỉnh đầu.
+*   **Hiện trạng:** `uv_lag_*`, `uv_rolling_*`, `uv_diff_*`, `uv_max_today_so_far` vẫn được tạo cho một số bảng phân tích trong backend, nhưng bị loại khỏi danh sách regression cuối để tránh dùng tín hiệu UV quan sát/quá khứ không nhất quán với live forecast.
 
 ### 2.2. Huấn luyện Mô hình
-*   **WHAT:** Benchmark 11 mô hình hồi quy khác nhau (Linear, Tree-based, Ensemble như XGBoost, LightGBM...).
+*   **WHAT:** Benchmark 11 mô hình tối ưu hóa: Random Forest, Decision Tree, XGBoost, LightGBM, CatBoost, LSTM, GRU, BiLSTM, CNN-LSTM, Attention-LSTM và Prophet+LGB.
 *   **WHY:** Do bản chất dữ liệu UV có yếu tố phi tuyến tính mạnh (phụ thuộc vào tương tác mây - ozone), các mô hình Linear thường hoạt động kém, việc so sánh nhiều mô hình giúp tìm ra thuật toán tối ưu.
-*   **HOW:** Quá trình huấn luyện đánh giá qua tập validation/test độc lập. Việc này giảm rủi ro Overfitting. Các tham số được chọn lựa để cân bằng giữa RMSE và R².
+*   **HOW:** Kết quả hiện tại trong `results/optimized/consolidated_results.csv` có 33 dòng (11 model x train/val/test). Trên test set, `attention_lstm` đang tốt nhất theo RMSE: MAE=0.3361, RMSE=0.5737, R²=0.9326, MAPE=13.29%.
 
 ---
 
@@ -94,24 +87,24 @@
 
 ### 4.1. Khai phá Công thức và Logic (Formulas & Logic)
 
-#### A. Safe Exposure Time (Dựa trên ScanSkinAI & Thang đo Fitzpatrick)
+#### A. Estimated Exposure Limit (Dựa trên WHO UVI, MED và thang Fitzpatrick)
 *   **WHAT (Công thức):**
 ```text
-Safe_Minutes = Base_Time_SkinType / max(1, UV_Index)
+Estimated_Exposure_Minutes = MED_Value / (Effective_UV * 1.5)
 ```
-*   **WHY:** WHO và các tổ chức Da liễu phân loại da người thành 6 loại (Fitzpatrick Scale). Da loại 1-2 (sáng màu) có ít Melanin, dễ cháy nắng trong thời gian ngắn. Hàm max(1, UV) đảm bảo không xảy ra lỗi chia cho 0 khi không có UV.
-*   **HOW (Thực thi):** `SKIN_BASE_SAFE_TIME = {1: 15, 2: 20, 3: 30, 4: 40, 5: 60, 6: 90}`. File `recommendation.py` duyệt qua từng mốc giờ dự báo, chia số Base Time cho mức UV để trả về số phút an toàn.
+*   **WHY:** WHO/ICNIRP định nghĩa 1 UVI = 0.025 W/m² bức xạ gây đỏ da, tương đương 1.5 J/(m²·phút). `MED_VALUES_JM2` là giá trị đại diện theo nhóm da Fitzpatrick, không phải ngưỡng lâm sàng tuyệt đối cho mọi cá nhân.
+*   **HOW (Thực thi):** `MED_VALUES_JM2 = {1: 200, 2: 250, 3: 300, 4: 450, 5: 600, 6: 1000}` trong `src/recommendation/safe_time_policy.py`. Nếu `Effective_UV <= 0.01`, hệ thống trả về trần 480 phút để tránh chia cho gần 0. Đây là ước lượng hỗ trợ quyết định, không phải tư vấn y khoa.
 
 #### B. Recommendation Score (Điểm Gợi ý Điểm đến)
 *   **WHAT (Công thức cốt lõi hiện tại):**
 ```text
-Score = Average_Safe_Ratio * (1 + Shade_Coverage / 200) * Indoor_Bonus
+Live Score = Average_Safe_Ratio * Thermal_Modifier
 ```
-*   **WHY:** Thời gian an toàn không phải là yếu tố duy nhất. Các địa điểm có độ che phủ cây xanh (Shade) hoặc có khu vực trong nhà (Indoor) sẽ giảm lượng tia UV trực tiếp, do đó an toàn hơn.
-*   **HOW:** Hệ thống tính toán `safe_ratio = min(safe_minutes / activity_duration, 1.0)`. Nơi có bóng râm được nhân hệ số `shade_bonus = 1.0 + (shade_cov / 200)`. Nơi trong nhà nhân `indoor_bonus = 1.3`. Cuối cùng sắp xếp (Sort) các địa điểm theo điểm số.
+*   **WHY:** Phiên bản hiện tại không còn dùng `indoor_bonus = 1.3` hoặc `shade_bonus = 1 + shade/200`. Indoor/shade được đưa vào bằng cách giảm UV hiệu dụng trước khi tính estimated exposure minutes.
+*   **HOW:** Trong `_score_places()`, địa điểm indoor dùng `effective_uv = uv_predicted * 0.05`; địa điểm outdoor dùng `effective_uv = uv_predicted * ((1 - shade_ratio) + shade_ratio * 0.3)`. Sau đó `safe_ratio = min(estimated_exposure_minutes / activity_duration, 1.0)`, điểm live là trung bình safe ratio nhân `thermal_modifier` (0.5 nếu outdoor và nhiệt độ trung bình >= 35°C).
 
 ### 4.2. Đánh giá Tính khoa học và Đề xuất Tối ưu (Advanced Formulas)
-*   **Đánh giá độ chính xác (Correctness):** Logic tính toán hiện tại hoàn toàn đúng đắn về mặt sinh học phân tử và vật lý học (sự che phủ râm mát).
+*   **Đánh giá độ chính xác (Correctness):** Lõi chuyển đổi UVI -> liều gây đỏ da có cơ sở khoa học, nhưng các giá trị MED theo loại da, hệ số indoor/shade, thermal modifier và rain modifier là các xấp xỉ/giả định triển khai cần ghi rõ giới hạn.
 *   **Đề xuất Nâng cấp (Weighted Scoring Optimization):**
     Để hệ thống có khả năng cá nhân hóa cao hơn (Personalized Recommender), thuật toán tính `Score` nên được mở rộng thành một hàm tối ưu tổng trọng số (Weighted Sum):
 ```text
@@ -128,20 +121,20 @@ Total_Score = (w1 * UV_Safety_Score) + (w2 * Distance_Score) + (w3 * User_Prefer
 
 Dựa trên cơ sở lý luận từ `Danh_gia_he_khuyen_nghi` và đối chiếu vào source code `evaluation.py`:
 
-*   **WHAT & WHY:** Hệ thống không chỉ gợi ý suông mà còn tự đánh giá bản thân (Offline Evaluation) dựa trên tập dữ liệu kiểm thử (Test Scenarios) kết hợp Ground Truth. Điều này mang ý nghĩa sống còn trong nghiên cứu Khoa học máy tính.
+*   **WHAT & WHY:** Hệ thống có tab Offline Evaluation dựa trên `data/evaluation/test_scenarios.json`. Hiện có 33 kịch bản, gồm cả các edge case SC026-SC035. Lưu ý: evaluation dùng hàm giả lập `_make_fake_recommendations_from_scenario()` với UV scalar trong scenario, không gọi trực tiếp live `_score_places()` trên dữ liệu forecast 7 ngày.
 *   **HOW (Chi tiết các chỉ số):**
     1.  **Precision@5 (Độ chính xác Top 5):** `(Số địa điểm phù hợp trong Top 5) / 5`. Đo lường có bao nhiêu địa điểm trong Top 5 thực sự đáp ứng tiêu chuẩn của user.
     2.  **Recall@5 (Độ bao phủ Top 5):** `(Số địa điểm phù hợp trong Top 5) / (Tổng số địa điểm phù hợp có thể có)`. Đo lường xem hệ thống có bỏ sót địa điểm tốt nào không.
     3.  **NDCG@5 (Normalized Discounted Cumulative Gain):** Vị trí gợi ý rất quan trọng. Thuật toán này sẽ "phạt" điểm nếu địa điểm tốt nhất bị đẩy xuống hạng 3 hoặc hạng 4 thay vì hạng 1.
     4.  **MRR (Mean Reciprocal Rank):** Vị trí trung bình của kết quả đúng đầu tiên.
-*   **Đánh giá độ tin cậy:** Giao diện Evaluation trình bày việc so sánh thuật toán Baseline (Random, Popularity, Distance Only) với Hệ thống UV hiện tại. Biểu đồ chỉ ra rằng thuật toán UV kết hợp mang lại Precision@5 vượt trội. Đây là minh chứng học thuật vô cùng mạnh mẽ cho Hội đồng bảo vệ.
+*   **Đánh giá độ tin cậy:** Chạy bằng môi trường `conda uv_forecast`, kết quả hiện tại sau khi sửa NDCG candidate-level là Precision@5=83.03%, Recall@5=66.16%, NDCG@5=0.9493, MRR=0.9286, Coverage=86.67%, Diversity=0.8515, Pass Rate=93.94% (31/33). Hai kịch bản fail: SC028 và SC032. Baseline Precision@5 trung bình có seed cố định: Random=36.97%, Popular=42.42%, Distance-only=55.15%, Current=83.03%.
 
 ---
 
 ## 6. ĐÁNH GIÁ CHẤT LƯỢNG CODE (CODE IMPLEMENTATION REVIEW)
 
 *   **Tính toàn vẹn của Feature Engineering:** Hoàn toàn chính xác, không xảy ra rò rỉ dữ liệu (Data Leakage) vì thao tác xử lý Time-Series Lag/Rolling được làm rất cẩn thận, nhóm (groupby) đúng theo `location_id`.
-*   **Logic Hệ thống Khuyến nghị:** Cấu trúc phân lớp tốt. Tách biệt được hàm tính khoảng cách (Haversine), tính an toàn da (`_compute_safe_minutes`), và chấm điểm (`_score_places`).
+*   **Logic Hệ thống Khuyến nghị:** Cấu trúc phân lớp tốt. Tách biệt được hàm tính khoảng cách (Haversine), ước lượng giới hạn phơi nhiễm (`_compute_safe_minutes`), và chấm điểm (`_score_places`).
 *   **Hiệu suất (Inefficiencies & Refactoring):**
     *   *Thuật toán:* Hàm lọc `_filter_nearby_places` hiện đang sử dụng vòng lặp duyệt qua tất cả danh mục địa điểm. Nếu quy mô mở rộng lên 1.000.000 địa điểm, hàm này sẽ gây thắt cổ chai. Đề xuất ứng dụng Spatial Indexing (như KD-Tree của thư viện `scipy.spatial` hoặc Geohash) để tăng tốc query lên ngưỡng `O(log n)` thay vì `O(n)`.
     *   *Refactor:* Trong `forecast.py`, các hằng số cấu hình màu sắc và text tiếng Việt nên được tách riêng ra file `constants.py`.

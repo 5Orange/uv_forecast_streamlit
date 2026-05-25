@@ -75,10 +75,10 @@ This document integrates:
 | Formula | Justification |
 |--------|--------------|
 | SafeRatio | Based on normalization theory |
-| Indoor bonus (1.3) | Derived from UV attenuation |
-| Shade bonus | Approximation of attenuation |
-| Rain modifier (0.3) | Tourism climate index |
-| Thermal modifier (0.5) | Heat stress simplification |
+| Indoor effective UV: `UV_eff = UV × 0.05` | Based on glass UV attenuation; implemented in live recommendation and offline evaluation |
+| Shade effective UV: `UV_eff = UV × [(1-S) + S×0.3]` | Approximation of canopy UV transmission; implemented in live recommendation and offline evaluation |
+| Rain modifier (0.3) | Offline evaluation heuristic based on tourism suitability, not used in live `_score_places()` |
+| Thermal modifier (0.5) | Heat stress simplification for outdoor places at ≥35°C |
 
 ---
 
@@ -182,7 +182,7 @@ https://www.researchgate.net/publication/236734298_Context-Aware_Intelligent_Rec
 - McKinlay & Diffey (1987)  
 - WHO (2002)  
 - Fitzpatrick (1975)  
-- Tuchinda et al. (2006)  
+- Tuchinda, Srivannaboon, & Lim (2006), DOI `10.1016/j.jaad.2005.11.1082`
 - Parisi et al. (1999)  
 - ISO 7243  
 - Mieczkowski (1985)  

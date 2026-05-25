@@ -39,24 +39,20 @@
 
 ## PHẦN 3: HỆ THỐNG GỢI Ý (RECOMMENDER SYSTEM) & KIỂM THỬ
 
-### Q6: Trong `recommendation.py`, tại sao công thức tính Score lại dùng phép Nhân: `Average_Safe_Ratio * Shade_Bonus * Indoor_Bonus` thay vì phép Cộng?
+### Q6: Trong `recommendation.py`, tại sao công thức tính Score hiện tại dùng `Average_Safe_Ratio * Thermal_Modifier`, còn indoor/shade lại xử lý bằng Effective UV?
 *   **Cách trả lời:**
-    "Em sử dụng phép Nhân vì nó đóng vai trò như toán tử logic **AND**. 
-    Nếu `Average_Safe_Ratio` = 0 (nghĩa là khung giờ đó ra ngoài 100% bị cháy nắng, không an toàn chút nào), thì dù địa điểm đó có đẹp hay bóng râm (`Shade_Bonus`) nhiều cỡ nào, tổng điểm Score sẽ lập tức bị kéo về 0. 
-    Nếu em dùng phép Cộng, một địa điểm nguy hiểm chết người nhưng có hệ số `Indoor_Bonus` cao vẫn có thể lọt lên Top đầu gợi ý. Phép nhân chính là chốt chặn an toàn (Veto Power)."
+    "Phiên bản hiện tại không còn cộng hoặc nhân bonus cố định cho indoor/shade. Em chuyển các yếu tố này về cùng đại lượng vật lý là UV hiệu dụng. Nếu địa điểm trong nhà, hệ thống dùng `effective_uv = uv * 0.05`; nếu là ngoài trời có bóng râm, hệ thống dùng `uv * ((1 - shade_ratio) + shade_ratio * 0.3)`. Sau đó hệ thống tính lại estimated exposure minutes bằng công thức MED/UVI. Em trình bày 0.05 và 0.3 là xấp xỉ triển khai có cơ sở từ tài liệu UV attenuation, không phải hằng số tuyệt đối cho mọi loại kính hoặc bóng râm. Score cuối là `Average_Safe_Ratio * Thermal_Modifier`; nhiệt độ cao ngoài trời giảm điểm bằng hệ số 0.5 như một comfort penalty triển khai."
 
 ### Q7: Chỉ số NDCG@5 trong `evaluation.py` hoạt động thế nào? Tại sao nó ưu việt hơn Precision@5?
 *   **Cách trả lời:**
     "Chỉ số `Precision@5` chỉ quan tâm việc Địa điểm Tốt có nằm trong Top 5 hay không (trả lời Có hoặc Không). Nhưng với người dùng, vị trí đứng của địa điểm là cực kỳ quan trọng. 
-    `NDCG@5` (Normalized Discounted Cumulative Gain) ưu việt hơn vì nó quan tâm đến **Thứ tự xếp hạng**. NDCG áp dụng hàm chia logarit: Nó sẽ 'trừ điểm' nặng nề nếu hệ thống đẩy một địa điểm hoàn hảo xuống tận Top 4 thay vì đặt nó ở Top 1. Hệ thống của em đạt NDCG cao, chứng minh nó không chỉ tìm đúng, mà còn biết cách xếp cái tốt nhất lên đầu tiên."
+    `NDCG@5` (Normalized Discounted Cumulative Gain) hữu ích vì nó quan tâm đến **thứ tự xếp hạng**. NDCG áp dụng hàm chia logarit: nó giảm điểm nếu kết quả phù hợp bị đẩy xuống dưới. Sau khi sửa `IDCG` theo candidate-level ideal ranking, NDCG@5 hiện là 0.9493 và không vượt 1. Tuy nhiên, NDCG chỉ chứng minh chất lượng ranking theo ground truth scenario, không chứng minh an toàn y khoa ngoài thực tế."
 
-### Q8: Hãy giải thích logic y khoa `ScanSkinAI` và công thức Thời gian An toàn?
+### Q8: Hãy giải thích logic MED/Fitzpatrick và công thức estimated exposure limit?
 *   **Cách trả lời:**
-    "Thang đo Y khoa Fitzpatrick chia da người thành 6 loại. Da sáng màu (Loại 1, 2) có rất ít sắc tố Melanin bảo vệ, do đó Base Time (thời gian phơi nắng tiêu chuẩn trước khi da bị tổn thương) rất ngắn, chỉ khoảng 15-20 phút. Da sậm màu (Loại 5, 6) Base Time có thể lên đến 90 phút.
-    Công thức của hệ thống là: `Safe_Minutes = Base_Time_SkinType / max(1, UV_Index)`
-    Ví dụ: Da loại 3 (Base Time = 30), UV lúc 12h trưa đang là 10. Vậy thời gian an toàn = 30 / 10 = 3 phút. Nghĩa là người dùng chỉ có đúng 3 phút trước khi tế bào da bắt đầu bị bỏng rát. Hệ thống sẽ ngay lập tức cảnh báo người dùng và gợi ý họ tìm địa điểm trong nhà (Indoor)."
+    "Thang Fitzpatrick chia da thành 6 nhóm theo phản ứng cháy nắng/rám nắng. Công thức của hệ thống là `Estimated_Exposure_Minutes = MED_Value / (Effective_UV * 1.5)`. Trong đó 1 UVI tương đương 1.5 J/(m²·phút) bức xạ gây đỏ da, còn `MED_Value` là giá trị đại diện theo nhóm da: loại I = 200 J/m², loại III = 300 J/m², loại VI = 1000 J/m². Ví dụ da loại 3 tại UV=10 có estimated exposure limit xấp xỉ `300 / (10 * 1.5) = 20 phút`. Em không trình bày đây là bảo đảm y khoa, vì MED thay đổi theo từng cá nhân và WHO cảnh báo không nên hiểu burn time là quyền phơi nắng không bảo vệ."
 
 ### Q9: Làm sao chứng minh hệ thống của em tốt hơn việc chỉ đơn giản 'Gợi ý các địa điểm du lịch gần nhất'?
 *   **Cách trả lời:**
     "Trong tab System Assessment, em đã triển khai Hệ thống Đánh giá Baseline (Baseline Comparator). Em đã đo lường và hiển thị minh bạch sự đối đầu giữa hệ thống của em với 3 phương pháp khác: Lựa chọn Ngẫu nhiên (Random), Gợi ý Nơi nổi tiếng nhất (Popularity), và Gợi ý Nơi gần nhất (Distance Only).
-    Biểu đồ chứng minh rõ ràng: Khi kết hợp nhận thức UV (UV-aware), hệ thống của em đạt Precision và NDCG cao hơn hẳn việc chỉ chọn theo khoảng cách, vì những nơi gần nhất đôi khi lại là những bãi biển trống trải đang chịu ngưỡng tia cực tím hủy diệt vào lúc 12h trưa."
+    Biểu đồ cho thấy trong 33 scenario offline, hệ thống UV-aware đạt Precision@5 = 83.03% và NDCG@5 = 0.9493, cao hơn distance-only ở Precision@5 = 55.15%. Em chỉ diễn giải đây là bằng chứng ranking theo scenario, không phải bằng chứng y khoa ngoài thực tế."

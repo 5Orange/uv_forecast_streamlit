@@ -23,7 +23,7 @@ Mỗi Test Case (Scenario) được cấu thành từ 4 phần (Ví dụ kịch 
 
 ## 2. Hệ thống tính toán Precision, Recall như thế nào? (Kèm Code)
 
-Mã nguồn tại `src/recommendation/evaluation.py` thực hiện vòng lặp chấm điểm tự động cho tất cả 25 test cases.
+Mã nguồn tại `src/recommendation/evaluation.py` thực hiện vòng lặp chấm điểm tự động cho tất cả 33 test cases trong `data/evaluation/test_scenarios.json`.
 
 ### Precision@K (Độ chính xác Top-K)
 Trọng tâm: Trong K địa điểm hệ thống gợi ý, có bao nhiêu địa điểm **thực sự an toàn và phù hợp** (nằm trong `should_recommend`)?
@@ -84,7 +84,7 @@ Tại sao? Bởi vì vào lúc 12h trưa UV mức 11, thuật toán "Gần nhấ
 Đây là các tham chiếu khách quan, độc lập với code của em."
 
 **Luận điểm 2: Minh bạch về thuật toán đánh giá (Quantitative Evaluation)**
-"Để chứng minh, em không dùng ảnh chụp màn hình (screenshot) chọn lọc những kết quả đẹp. Em đã code một module `evaluation.py` chạy offline tự động tính toán bằng Toán học (Precision, NDCG, MRR) trên 25 kịch bản khắc nghiệt nhất. Các công thức này là chuẩn mực của ngành Khoa học Hệ thống Gợi ý (Recommender Systems) được thế giới công nhận."
+"Để chứng minh, em không dùng ảnh chụp màn hình (screenshot) chọn lọc những kết quả đẹp. Em đã code một module `evaluation.py` chạy offline tự động tính toán bằng Toán học (Precision, Recall, NDCG, MRR, Coverage, Diversity) trên 33 kịch bản. Tuy nhiên, em cũng ghi rõ đây là scenario-based simulator dùng UV scalar, không phải kiểm thử trực tiếp toàn bộ live recommender 7 ngày."
 
 **Luận điểm 3: Sự đánh đổi Khoảng cách - An toàn (Distance vs Safety Trade-off)**
 "Bằng chứng đắt giá nhất để tin tưởng hệ thống là sự đánh đổi. Trong các kịch bản thực nghiệm, hệ thống của em sẵn sàng hi sinh tiêu chí Khoảng cách (chấp nhận gợi ý một nơi xa hơn 5km) để đổi lấy sự an toàn (nơi đó có máy lạnh và mái che) khi UV chạm ngưỡng hủy diệt. Một hệ thống chỉ dựa trên giả định (assumption) sẽ không thể tự động xử lý được bài toán tối ưu hóa đa biến này."
@@ -100,13 +100,13 @@ Tại sao? Bởi vì vào lúc 12h trưa UV mức 11, thuật toán "Gần nhấ
 *   **Với Hệ thống Thực tế (Production / Bài báo khoa học):** Con số này là **CHƯA ĐỦ**.
 
 **Cách lập luận bảo vệ (Dành cho Hội đồng):**
-"Thưa Hội đồng, nếu đây là một mô hình Machine Learning thuần túy (như Thuật toán gợi ý của Netflix hay Shopee) dựa trên dữ liệu lịch sử hàng triệu người dùng, thì 25 test case là con số vô nghĩa. Tuy nhiên, hệ thống của em là **Hệ thống Gợi ý dựa trên Luật và Ngữ cảnh (Rule-based & Context-Aware Recommender System)**, được neo vào các quy tắc y khoa vật lý cứng.
+"Thưa Hội đồng, nếu đây là một mô hình Machine Learning thuần túy (như Thuật toán gợi ý của Netflix hay Shopee) dựa trên dữ liệu lịch sử hàng triệu người dùng, thì 33 test case là con số còn nhỏ. Tuy nhiên, hệ thống của em là **Hệ thống Gợi ý dựa trên Luật và Ngữ cảnh (Rule-based & Context-Aware Recommender System)**, được neo vào các quy tắc y khoa vật lý cứng.
 
-Do đó, 25 kịch bản của em không được tạo ra ngẫu nhiên, mà em sử dụng kỹ thuật **Phân tích Giá trị Biên (Boundary Value Analysis)** và **Phân vùng Tương đương (Equivalence Partitioning)** trong Kiểm thử Phần mềm. Em tập trung test thẳng vào các 'điểm mù' và tình huống khắc nghiệt nhất (Edge-cases) như: Nắng cực gắt, mưa lớn, da cực trắng, hoặc đi biển lúc giữa trưa. Vượt qua được 25 kịch bản khó nhất này là minh chứng rõ ràng nhất cho việc thuật toán ưu tiên an toàn (Safety-first) hoạt động chính xác."
+Do đó, 33 kịch bản của em không được tạo ra ngẫu nhiên, mà em sử dụng kỹ thuật **Phân tích Giá trị Biên (Boundary Value Analysis)** và **Phân vùng Tương đương (Equivalence Partitioning)** trong Kiểm thử Phần mềm. Em tập trung test thẳng vào các 'điểm mù' như nắng cực gắt, mưa lớn, da cực trắng, UV thấp nhưng outdoor nên thắng, diversity, và preference theo loại địa điểm. Kết quả hiện tại là 31/33 pass; hai fail case giúp chỉ ra hướng cải tiến preference-aware và diversity-aware ranking."
 
 ### Nên thêm bao nhiêu Test Case thì hệ thống mới đạt chuẩn hoàn hảo?
 Bạn hãy chủ động đề xuất hướng giải quyết này trước khi Hội đồng kịp bắt bẻ:
-"Dù 25 test case đã chứng minh được tính đúng đắn (Correctness) của logic, nhưng em nhận thức được để hệ thống hoàn thiện ở mức độ thương mại (Production) hoặc xuất bản bài báo khoa học, em cần mở rộng lên khoảng **50 đến 100 kịch bản**."
+"Dù 33 test case đã chứng minh được phần lớn tính đúng đắn (Correctness) của logic, nhưng em nhận thức được để hệ thống hoàn thiện ở mức độ thương mại (Production) hoặc xuất bản bài báo khoa học, em cần mở rộng lên khoảng **50 đến 100 kịch bản** và thêm kiểm thử trực tiếp cho live recommender."
 
 ### Thêm như thế nào cho khoa học? (Tuyệt đối không thêm bừa)
 Đừng nói là "Em sẽ ngồi nghĩ thêm 75 cái nữa". Hãy dùng thuật ngữ học thuật:
@@ -116,4 +116,4 @@ Bạn hãy chủ động đề xuất hướng giải quyết này trước khi 
 *   **3 Trạng thái Thời tiết** (Clear, Rain, Heatwave).
 *   **3 Thời điểm** (Sáng, Trưa, Chiều tối).
 
-$(6 \times 5 \times 3 \times 3 = 270 \text{ tổ hợp lý thuyết})$. Từ 270 tổ hợp này, em sẽ tự động hóa việc lọc ra khoảng 70-100 tổ hợp có ý nghĩa thực tiễn nhất để bổ sung vào bộ `test_scenarios.json`. Việc phủ kín ma trận (Matrix Coverage) này sẽ đảm bảo hệ thống an toàn 100% trong mọi tình huống thực tế của con người."
+$(6 \times 5 \times 3 \times 3 = 270 \text{ tổ hợp lý thuyết})$. Từ 270 tổ hợp này, em sẽ tự động hóa việc lọc ra khoảng 70-100 tổ hợp có ý nghĩa thực tiễn nhất để bổ sung vào bộ `test_scenarios.json`. Việc phủ kín ma trận (Matrix Coverage) chỉ giúp tăng độ bao phủ kiểm thử scenario; không được diễn giải là đảm bảo hệ thống an toàn 100% trong mọi tình huống thực tế."

@@ -22,7 +22,7 @@ from app.utils.forecaster import get_live_forecast
 from config import STATIC_DIR, LOCATIONS
 
 # -- Constants -----------------------------------------------------------------
-from src.recommendation.safe_time_policy import MED_VALUES_JM2, SKIN_TYPE_MULTIPLIER
+from src.recommendation.safe_time_policy import MED_VALUES_JM2
 
 WHO_CAT_COLORS = {
     "Low": "#27ae60", "Moderate": "#f1c40f", "High": "#e67e22",
@@ -81,7 +81,7 @@ def _load_places() -> list[dict]:
 
 def _compute_safe_minutes(effective_uv: pd.Series, skin_type: int) -> pd.Series:
     med_value = MED_VALUES_JM2[skin_type]
-    # Cap at 480 min (8h) for negligible UV; avoid division by near-zero
+    # Estimated minutes to representative MED; cap negligible UV to avoid division by near-zero.
     safe = np.where(
         effective_uv <= 0.01,
         480.0,
@@ -432,8 +432,7 @@ def render(
     if not loc_today.empty:
         peak_uv  = loc_today["uv_predicted"].max()
         peak_cat = loc_today.loc[loc_today["uv_predicted"].idxmax(), "uv_category"]
-        multiplier = SKIN_TYPE_MULTIPLIER[skin_type]
-        safe_min = (200.0 * multiplier) / (3.0 * max(1.0, peak_uv))
+        safe_min = float(_compute_safe_minutes(pd.Series([peak_uv]), skin_type).iloc[0])
         
         col_uv, col_safe, col_advice = st.columns(3)
         with col_uv:
@@ -444,7 +443,7 @@ def render(
                 delta_color="off",
             )
         with col_safe:
-            st.metric("Thời gian an toàn", f"{safe_min:.0f} phút", delta=f"Loại da {skin_type}", delta_color="off")
+            st.metric("Ước lượng giới hạn phơi nhiễm", f"{safe_min:.0f} phút", delta=f"Loại da {skin_type}", delta_color="off")
         with col_advice:
             advice = WHO_ADVICE.get(peak_cat, "")
             if peak_cat in ["Very High", "Extreme"]:
@@ -454,7 +453,7 @@ def render(
             else:
                 st.success(advice)
 
-    # -- Safe time chart ----------------------------------------------------
+    # -- Estimated exposure chart ------------------------------------------
     st.subheader("🕐 Khung giờ an toàn hôm nay")
     loc_today_chart = today[today["location_id"] == loc_sel].copy()
     if not loc_today_chart.empty:
@@ -585,4 +584,3 @@ def render(
                     st.caption(f"⏰ {p['best_start'].strftime('%H:%M')} - {p['best_end'].strftime('%H:%M')}  \n🤖 {p.get('model_used', '')}")
                 if p["maps_url"]:
                     st.markdown(f"[📍 Google Maps]({p['maps_url']})")
-

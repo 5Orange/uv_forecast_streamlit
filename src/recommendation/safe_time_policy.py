@@ -1,8 +1,8 @@
 import math
 
-# Fitzpatrick scale Minimal Erythemal Dose (MED) values in J/m^2.
-# Source: WHO (2002) Global Solar UV Index: A Practical Guide & CIE Action Spectrum
-# Formula: safe_minutes = MED_Value / (UV_Index * 1.5)
+# Representative Fitzpatrick Minimal Erythemal Dose (MED) defaults in J/m^2.
+# WHO/ICNIRP/CIE support the UVI-to-erythemal-dose conversion; individual MED varies.
+# Formula: estimated_minutes = MED_Value / (UV_Index * 1.5)
 # (1 UV Index unit = 0.025 W/m^2 = 1.5 J/(m^2*min) of erythemal irradiance)
 MED_VALUES_JM2 = {
     1: 200.0,   # Type I  - Very fair, always burns, never tans
@@ -34,18 +34,18 @@ SKIN_TYPE_LABELS_VI = {
 
 def get_safe_exposure_time(skin_type: int, uv_index: float) -> float:
     """
-    Calculate safe exposure time in minutes based on Fitzpatrick skin type and UV index.
+    Estimate minutes to reach the representative MED for a Fitzpatrick skin type.
 
-    Formula: safe_minutes = MED_Value / (UV_Index * 1.5)
+    Formula: estimated_minutes = MED_Value / (UV_Index * 1.5)
 
-    Aligned with CIE (1987) Erythemal Action Spectrum and WHO (2002) MED standards.
+    This is a decision-support estimate, not a clinical safety guarantee.
 
     Args:
         skin_type: Fitzpatrick skin type (1-6).
         uv_index: UV index value (0-12+).
 
     Returns:
-        Safe exposure time in minutes (float).
+        Estimated exposure limit in minutes (float).
 
     Raises:
         ValueError: If skin_type is not in 1-6.
@@ -63,7 +63,7 @@ def get_safe_exposure_time(skin_type: int, uv_index: float) -> float:
 
 def validate_against_standards(skin_type: int, uv_index: float) -> dict:
     """
-    Validate computed safe time against expected medical reference ranges.
+    Validate computed estimate against broad plausibility ranges.
 
     Returns a dict with:
       - computed_minutes: result of get_safe_exposure_time()
@@ -81,7 +81,7 @@ def validate_against_standards(skin_type: int, uv_index: float) -> dict:
     warning = None
     if not in_range:
         warning = (
-            f"Unusual safe time {minutes:.1f} min for skin_type={skin_type}, UV={uv_index}. "
+            f"Unusual estimated exposure limit {minutes:.1f} min for skin_type={skin_type}, UV={uv_index}. "
             "Check input values."
         )
     return {
