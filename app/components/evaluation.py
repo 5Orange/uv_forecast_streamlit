@@ -249,7 +249,7 @@ def _render_diversity_analysis(scenario_results: list[dict]) -> None:
     
     # Apply colors directly to the single trace to prevent thin bars
     colors = (px.colors.qualitative.Set3 * 3)[:len(df_col)]
-    fig_col.update_traces(textposition="outside", textfont_size=14, marker_color=colors)
+    fig_col.update_traces(textposition="outside", textfont_size=14, marker_color=colors, width=0.5)
     fig_col.update_layout(
         title="Phân phối loại địa điểm (tất cả kịch bản)",
         height=500,
@@ -264,7 +264,10 @@ def _render_diversity_analysis(scenario_results: list[dict]) -> None:
     if values:
         fig_col.update_yaxes(range=[0, max(values) * 1.25])
         
-    st.plotly_chart(fig_col, width='stretch', theme=None)
+    # Center the chart
+    col_left, col_center, col_right = st.columns([1, 6, 1])
+    with col_center:
+        st.plotly_chart(fig_col, width='stretch', theme=None)
 
     # Entropy score
     total = sum(values) or 1
