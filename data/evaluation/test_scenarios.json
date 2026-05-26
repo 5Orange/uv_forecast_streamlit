@@ -24,9 +24,7 @@
         "should_recommend": [
           "observation_deck",
           "historical_site",
-          "indoor_attraction",
-          "market",
-          "river_side"
+          "indoor_attraction"
         ],
         "should_avoid": [
           "coastal_beach",
@@ -133,16 +131,14 @@
         "timestamp": "2025-09-01T14:00:00",
         "uv_forecast": 11,
         "temperature": 36,
-        "weather_condition": "rainy",
-        "is_raining": true
+        "weather_condition": "sunny",
+        "is_raining": false
       },
       "ground_truth": {
         "should_recommend": [
           "observation_deck",
           "historical_site",
-          "indoor_attraction",
-          "market",
-          "river_side"
+          "indoor_attraction"
         ],
         "should_avoid": [
           "coastal_beach",
@@ -325,9 +321,7 @@
         "should_recommend": [
           "observation_deck",
           "historical_site",
-          "indoor_attraction",
-          "market",
-          "river_side"
+          "indoor_attraction"
         ],
         "should_avoid": [
           "coastal_beach"
@@ -413,7 +407,7 @@
     },
     {
       "id": "SC014",
-      "description": "UV thấp + da loại 5 tại Nhà Bè - ngoài trời an toàn",
+      "description": "UV trung bình + da loại 5 tại Nhà Bè - ngoài trời an toàn",
       "user_profile": {
         "skin_type": 5,
         "activity_duration_minutes": 15,
@@ -471,9 +465,7 @@
         "should_recommend": [
           "observation_deck",
           "historical_site",
-          "indoor_attraction",
-          "market",
-          "river_side"
+          "indoor_attraction"
         ],
         "should_avoid": [
           "urban_park",
@@ -511,8 +503,8 @@
       "ground_truth": {
         "should_recommend": [
           "indoor_attraction",
-          "religious_site",
-          "nature_spot"
+          "nature_spot",
+          "religious_site"
         ],
         "should_avoid": [
           "coastal_beach"
@@ -585,9 +577,7 @@
         "should_recommend": [
           "observation_deck",
           "historical_site",
-          "indoor_attraction",
-          "market",
-          "river_side"
+          "indoor_attraction"
         ],
         "should_avoid": [
           "urban_park",
@@ -733,9 +723,7 @@
         "should_recommend": [
           "observation_deck",
           "historical_site",
-          "indoor_attraction",
-          "market",
-          "river_side"
+          "indoor_attraction"
         ],
         "should_avoid": [
           "urban_park",
@@ -1018,8 +1006,8 @@
       "ground_truth": {
         "should_recommend": [
           "eco_park",
-          "nature_spot",
-          "forest"
+          "forest",
+          "outdoor_attraction"
         ],
         "should_avoid": [],
         "explanation": "UV=2 thấp tại Cần Giờ nên các loại hình du lịch sinh thái, rừng ngập mặn được ưu tiên"
@@ -1097,10 +1085,10 @@
     },
     {
       "id": "SC033",
-      "description": "UV rất cao nhưng hoạt động cực ngắn 10 phút - ngoài trời an toàn",
+      "description": "UV rất cao nhưng hoạt động cực ngắn 7 phút - ngoài trời an toàn",
       "user_profile": {
         "skin_type": 5,
-        "activity_duration_minutes": 7,
+        "activity_duration_minutes": 10,
         "preferences": [
           "walking"
         ]
@@ -1121,7 +1109,7 @@
           "outdoor_attraction"
         ],
         "should_avoid": [],
-        "explanation": "Da loại 5 với UV=8 có thời gian an toàn khoảng 66.7 phút, lớn hơn hoạt động 10 phút nên tỷ lệ an toàn đạt 1.0"
+        "explanation": "Da loại 5 với UV=8 có thời gian an toàn khoảng 66.7 phút, lớn hơn hoạt động 7 phút nên tỷ lệ an toàn đạt 1.0"
       },
       "expected_metrics": {
         "target_precision": 0.6,
