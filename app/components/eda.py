@@ -43,7 +43,7 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
             title="Histogram UV Index (theo khu vực)"
         )
         fig_hist.update_layout(bargap=0.05, legend_title="Chú thích")
-        st.plotly_chart(fig_hist, width='stretch')
+        st.plotly_chart(fig_hist, width='stretch', theme=None)
 
     with col_b:
         fig_box = px.box(
@@ -54,7 +54,7 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
             title="Phân bố UV Index theo khu vực"
         )
         fig_box.update_layout(showlegend=False)
-        st.plotly_chart(fig_box, width='stretch')
+        st.plotly_chart(fig_box, width='stretch', theme=None)
 
     # -- 3. Class distribution ----------------------------------------------
     st.subheader("Phân bố danh mục UV (WHO)")
@@ -69,15 +69,18 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
         cat_counts,
         x="Category_vi",
         y="Count",
-        color="Category",
-        text = "Count",
-        color_discrete_map=UV_CATEGORY_COLORS,
+        text="Count",
         title="Phân bố danh mục nguy hiểm UV",
         labels={"Category_vi": "Danh mục", "Count": "Số lượng"},
     )
-    fig_cat.update_layout(showlegend=False)
-    fig_cat.update_traces(textposition="outside")
-    st.plotly_chart(fig_cat, width='stretch')
+    fig_cat.update_layout(showlegend=False, height=450)
+    
+    marker_colors = [UV_CATEGORY_COLORS.get(c, "#888") for c in cat_counts["Category"]]
+    fig_cat.update_traces(textposition="outside", textfont_size=14, marker_color=marker_colors, width=0.5)
+    
+    col_left, col_center, col_right = st.columns([1, 4, 1])
+    with col_center:
+        st.plotly_chart(fig_cat, width='stretch', theme=None)
 
     # -- 4. UV Temporal Pattern ----------------------------------------------
     st.subheader("Xu hướng UV theo thời gian")

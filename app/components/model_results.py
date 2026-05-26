@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from app.utils.data_loader import (
@@ -120,43 +121,55 @@ def render():
 
     # -- RMSE bar - test split, coloured by group --------------------------
     st.markdown("#### 📊 So sánh RMSE (Test)")
+    sorted_test_df_rmse = test_df.sort_values("rmse")
+    marker_colors_rmse = sorted_test_df_rmse["type"].map(GROUP_COLORS).tolist()
+    
     fig_rmse = px.bar(
-        test_df.sort_values("rmse"),
+        sorted_test_df_rmse,
         x="rmse", y="model",
-        color="type",
-        color_discrete_map=GROUP_COLORS,
         orientation="h",
         text="rmse",
-        labels={"rmse": "RMSE (thấp hơn = tốt hơn)", "model": "Mô hình", "type": "Nhóm"},
+        labels={"rmse": "RMSE (thấp hơn = tốt hơn)", "model": "Mô hình"},
         title="So sánh RMSE - Tất cả mô hình tối ưu",
     )
-    fig_rmse.update_traces(texttemplate="%{text:.4f}", textposition="outside")
+    fig_rmse.update_traces(texttemplate="%{text:.4f}", textposition="outside", textfont_size=14, marker_color=marker_colors_rmse)
     fig_rmse.update_layout(
         xaxis_range=[0, test_df["rmse"].max() * 1.18],
         legend_title="Chú thích",
         height=420,
     )
-    st.plotly_chart(fig_rmse, width='stretch')
+    # Add dummy traces for legend
+    for g_name, g_color in GROUP_COLORS.items():
+        if g_name in sorted_test_df_rmse["type"].unique():
+            fig_rmse.add_trace(go.Bar(x=[None], y=[None], marker_color=g_color, name=g_name))
+            
+    st.plotly_chart(fig_rmse, width='stretch', theme=None)
 
     # -- R2 bar ------------------------------------------------------------
     st.markdown("#### 📊 So sánh R2 (Test)")
+    sorted_test_df_r2 = test_df.sort_values("r2", ascending=False)
+    marker_colors_r2 = sorted_test_df_r2["type"].map(GROUP_COLORS).tolist()
+
     fig_r2 = px.bar(
-        test_df.sort_values("r2", ascending=False),
+        sorted_test_df_r2,
         x="r2", y="model",
-        color="type",
-        color_discrete_map=GROUP_COLORS,
         orientation="h",
         text="r2",
-        labels={"r2": "R2 (cao hơn = tốt hơn)", "model": "Mô hình", "type": "Nhóm"},
+        labels={"r2": "R2 (cao hơn = tốt hơn)", "model": "Mô hình"},
         title="So sánh R2 - Tất cả mô hình tối ưu",
     )
-    fig_r2.update_traces(texttemplate="%{text:.4f}", textposition="outside")
+    fig_r2.update_traces(texttemplate="%{text:.4f}", textposition="outside", textfont_size=14, marker_color=marker_colors_r2)
     fig_r2.update_layout(
         xaxis_range=[max(0, test_df["r2"].min() - 0.05), 1.05],
         legend_title="Chú thích",
         height=420,
     )
-    st.plotly_chart(fig_r2, width='stretch')
+    # Add dummy traces for legend
+    for g_name, g_color in GROUP_COLORS.items():
+        if g_name in sorted_test_df_r2["type"].unique():
+            fig_r2.add_trace(go.Bar(x=[None], y=[None], marker_color=g_color, name=g_name))
+            
+    st.plotly_chart(fig_r2, width='stretch', theme=None)
 
     # -- MAE vs RMSE scatter -----------------------------------------------
     st.markdown("#### 🔍 MAE vs RMSE - Phân tích đánh đổi (Test)")
@@ -176,7 +189,7 @@ def render():
     fig_scatter.add_shape(type="line", x0=mn, y0=mn, x1=mx, y1=mx,
                           line=dict(dash="dot", color="#ccc"))
     fig_scatter.update_layout(legend_title="Chú thích")
-    st.plotly_chart(fig_scatter, width='stretch')
+    st.plotly_chart(fig_scatter, width='stretch', theme=None)
 
     # -- Train vs Test R2 - overfitting check ------------------------------
     st.markdown("#### 🔬 Kiểm tra Overfitting (Train R2 vs Test R2)")
@@ -196,7 +209,7 @@ def render():
     fig_overfit.add_shape(type="line", x0=0, y0=0, x1=1, y1=1,
                           line=dict(dash="dot", color="#ccc"))
     fig_overfit.update_layout(legend_title="Chú thích")
-    st.plotly_chart(fig_overfit, width='stretch')
+    st.plotly_chart(fig_overfit, width='stretch', theme=None)
 
     # -- Group-level summary -----------------------------------------------
     st.markdown("#### 📊 Tổng hợp theo nhóm mô hình (Test)")

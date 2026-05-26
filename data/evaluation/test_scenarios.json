@@ -15,7 +15,7 @@
         "lat": 10.7769,
         "lon": 106.7009,
         "timestamp": "2025-07-15T12:00:00",
-        "uv_forecast": 11,
+        "uv_forecast": 9,
         "temperature": 35,
         "weather_condition": "sunny",
         "is_raining": false
@@ -46,7 +46,7 @@
       "description": "UV thấp + da sẫm loại 6 - tất cả hoạt động ngoài trời đều an toàn",
       "user_profile": {
         "skin_type": 6,
-        "activity_duration_minutes": 90,
+        "activity_duration_minutes": 60,
         "preferences": [
           "beach",
           "walking"
@@ -83,7 +83,7 @@
       "description": "UV thấp + thời tiết mát mẻ - phù hợp ngoài trời",
       "user_profile": {
         "skin_type": 4,
-        "activity_duration_minutes": 60,
+        "activity_duration_minutes": 30,
         "preferences": [
           "sightseeing",
           "walking"
@@ -94,8 +94,8 @@
         "lat": 10.7769,
         "lon": 106.7009,
         "timestamp": "2025-06-10T10:00:00",
-        "uv_forecast": 5,
-        "temperature": 31,
+        "uv_forecast": 3,
+        "temperature": 25,
         "weather_condition": "partly_cloudy",
         "is_raining": false
       },
@@ -119,7 +119,7 @@
       "id": "SC004",
       "description": "UV cực cao + da rất sáng loại 1 - bắt buộc ở trong nhà",
       "user_profile": {
-        "skin_type": 3,
+        "skin_type": 1,
         "activity_duration_minutes": 45,
         "preferences": [
           "walking",
@@ -131,8 +131,8 @@
         "lat": 10.7769,
         "lon": 106.7009,
         "timestamp": "2025-09-01T14:00:00",
-        "uv_forecast": 4,
-        "temperature": 27,
+        "uv_forecast": 11,
+        "temperature": 36,
         "weather_condition": "rainy",
         "is_raining": true
       },
@@ -231,8 +231,8 @@
       "id": "SC008",
       "description": "UV trung bình + hoạt động ngắn 30 phút - ngoài trời an toàn",
       "user_profile": {
-        "skin_type": 2,
-        "activity_duration_minutes": 60,
+        "skin_type": 3,
+        "activity_duration_minutes": 30,
         "preferences": [
           "walking",
           "sightseeing"
@@ -243,7 +243,7 @@
         "lat": 10.7769,
         "lon": 106.7009,
         "timestamp": "2025-06-10T17:00:00",
-        "uv_forecast": 1,
+        "uv_forecast": 5,
         "temperature": 29,
         "weather_condition": "clear",
         "is_raining": false
@@ -316,8 +316,8 @@
         "lat": 10.7769,
         "lon": 106.7009,
         "timestamp": "2025-08-01T12:00:00",
-        "uv_forecast": 9,
-        "temperature": 34,
+        "uv_forecast": 12,
+        "temperature": 37,
         "weather_condition": "sunny",
         "is_raining": false
       },
@@ -344,7 +344,7 @@
       "id": "SC011",
       "description": "UV cao + da loại 4 - ngoài trời có bóng mát an toàn",
       "user_profile": {
-        "skin_type": 3,
+        "skin_type": 4,
         "activity_duration_minutes": 45,
         "preferences": [
           "sightseeing"
@@ -415,7 +415,7 @@
       "id": "SC014",
       "description": "UV thấp + da loại 5 tại Nhà Bè - ngoài trời an toàn",
       "user_profile": {
-        "skin_type": 1,
+        "skin_type": 5,
         "activity_duration_minutes": 15,
         "preferences": [
           "walking"
@@ -451,7 +451,7 @@
       "id": "SC015",
       "description": "UV cao + da rất sáng loại 1 - ưu tiên trong nhà",
       "user_profile": {
-        "skin_type": 3,
+        "skin_type": 1,
         "activity_duration_minutes": 60,
         "preferences": [
           "sightseeing"
@@ -1100,7 +1100,7 @@
       "description": "UV rất cao nhưng hoạt động cực ngắn 10 phút - ngoài trời an toàn",
       "user_profile": {
         "skin_type": 5,
-        "activity_duration_minutes": 10,
+        "activity_duration_minutes": 7,
         "preferences": [
           "walking"
         ]
