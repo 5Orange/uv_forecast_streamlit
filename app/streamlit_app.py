@@ -101,7 +101,7 @@ tabs = [
     "🏠 Tổng quan",
     "📊 Phân tích dữ liệu",
     "🤖 Kết quả mô hình",
-    "🔮 Dự báo (Trực tiếp)",
+    "🔮 Dự báo",
     "🌍 Gợi ý hoạt động",
     "🔬 Đánh giá hệ thống",
 ]
@@ -224,7 +224,7 @@ elif active_tab == "🤖 Kết quả mô hình":
         with st.spinner("⏳ Đang tải dữ liệu..."):
             model_results.render()
 
-elif active_tab == "🔮 Dự báo (Trực tiếp)":
+elif active_tab == "🔮 Dự báo":
     with main_content.container():
         available_reg = get_available_models()
         if available_reg:

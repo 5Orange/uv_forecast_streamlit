@@ -201,15 +201,43 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
             corr_data = data[valid_feats].dropna()
             if len(corr_data) > 0:
                 corr = corr_data.corr()
+                lower_triangle_mask = np.triu(np.ones(corr.shape, dtype=bool), k=1)
+                corr_lower = corr.mask(lower_triangle_mask)
+                corr_height = max(1200, len(corr_lower) * 52 + 260)
+
                 fig_corr = px.imshow(
-                    corr,
+                    corr_lower,
                     color_continuous_scale="RdBu_r",
                     zmin=-1, zmax=1,
                     text_auto=".2f",
                     labels=dict(color="Hệ số tương quan"),
-                    title="Ma trận tương quan (các đặc trưng chính vs UV index)",
+                    title="Ma trận tương quan tam giác dưới (các đặc trưng chính vs UV index)",
                 )
-                fig_corr.update_layout(height=1000)
+                fig_corr.update_traces(
+                    hoverongaps=False,
+                    textfont=dict(size=16),
+                )
+                fig_corr.update_layout(
+                    height=corr_height,
+                    margin=dict(l=230, r=50, t=140, b=90),
+                    title=dict(font=dict(size=24)),
+                    coloraxis_colorbar=dict(
+                        title=dict(font=dict(size=17)),
+                        tickfont=dict(size=15),
+                        x=0.93,
+                        xanchor="left",
+                        xpad=0,
+                    ),
+                )
+                fig_corr.update_xaxes(
+                    tickangle=45,
+                    tickfont=dict(size=15),
+                    automargin=True,
+                )
+                fig_corr.update_yaxes(
+                    tickfont=dict(size=15),
+                    automargin=True,
+                )
                 st.plotly_chart(fig_corr, width='stretch')
 
     # -- time series validation

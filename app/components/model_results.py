@@ -26,10 +26,11 @@ def render():
     raw_df = load_regression_results()
     pivot_df = load_regression_results_pivot()
 
-    # -- KPI: top-3 by test RMSE -------------------------------------------
+    # -- KPI: best model per group by test RMSE -----------------------------
     test_df = raw_df[raw_df["split"] == "test"].sort_values("rmse")
-    top3 = test_df.head(3)
-    cols = st.columns(3)
+    best_per_group = test_df.groupby("type", sort=False).first().reset_index()
+    top3 = best_per_group.sort_values("rmse").head(3)
+    cols = st.columns(len(top3))
     medals = ["🥇", "🥈", "🥉"]
     for col, medal, (_, row) in zip(cols, medals, top3.iterrows()):
         col.metric(
