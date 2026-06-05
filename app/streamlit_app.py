@@ -139,36 +139,7 @@ if active_tab == "🏠 Tổng quan":
 
         st.subheader("Kiến trúc hệ thống & Dữ liệu")
 
-        st.markdown(f"""
-```text
-[ Raw Data Sources ]
-Open-Meteo (Weather, Forecast) --┐
-WeatherBit (Realtime UV)     ----+---> [ Data Merger ]
-OpenUV (Realtime & Safe Time) ---+      - Spatial-Temporal Join & Fallback (WB > OpenUV > OM)
-Air Quality (Ozone, Aerosol) ----┘      - pvlib Solar Position (zenith, elevation, azimuth)
-                                        - NOAA Heat Index & Stress Levels
-                                                  |
-                                                  v
-                                       [ Feature Engineering ]
-                                        - 22 Core Features (Temporal, Solar, Atmospheric, Lag)
-                                        - Health Features (Fitzpatrick Safe Exposure, Risk)
-                                        - Tourism Features (Beach & Outdoor Suitability)
-                                                  |
-                                                  v
-                                      [ Model Inference ]
-                                       {DISPLAY_NAMES.get(best_model, best_model)} (R2={best_r2:.4f}, RMSE={best_rmse:.4f})
-                                        - Dự báo UV liên tục
-                                        - Lọc ban đêm (solar_elevation <= 0 -> UV = 0)
-                                        - Phân loại mức độ WHO (Thấp -> Cực đoan)
-                                                  |
-                 ┌────────────────────────────────┼────────────────────────────────┐
-                 v                                v                                v
-        [ EDA & Results ]               [ 7-Day Forecast ]             [ Tourism Recommender ]
-  - Phân tích tương quan           - API Trực tiếp (Realtime)     - Phân loại da (ScanSkinAI)
-  - Biểu đồ đánh giá mô hình       - Cảnh báo chỉ số cực đoan     - Lọc địa điểm an toàn (Shade/Indoor)
-  - Ma trận hệ số (Heatmap)        - Giao diện Card hiện đại      - Chấm điểm và Gợi ý tối ưu
-```
-    """)
+        st.image(str(ROOT / "diagram" / "process_flow_overview.svg"), width=1200)
 
         st.subheader("Chi tiết đặc trưng regression cốt lõi")
         st.info("Danh sách các features dùng trực tiếp để train/inference regression.")
