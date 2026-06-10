@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import streamlit as st
 
 # -- Project imports ------------------------------------------------------------
@@ -167,44 +168,44 @@ def _render_baseline_comparison(scenario_results: list[dict]) -> None:
             agg[method]["recall"].append(m.get("recall_at_k", 0))
             agg[method]["ndcg"].append(m.get("ndcg_at_k", 0))
 
-    bar_data = []
     metric_display = {"precision": "Precision@5", "recall": "Recall@5", "ndcg": "NDCG@5"}
-    for method in methods:
-        for metric, mlabel in metric_display.items():
-            val = float(np.mean(agg[method][metric])) if agg[method][metric] else 0
-            bar_data.append({
-                "Phương pháp": method_labels[method],
-                "Chỉ số": mlabel,
-                "Giá trị": round(val, 4),
-            })
-
-    import pandas as pd
-    df = pd.DataFrame(bar_data)
-
     color_map = {
         "Hệ thống hiện tại": "#2ecc71",
         "Ngẫu nhiên":        "#95a5a6",
         "Phổ biến nhất":     "#3498db",
         "Gần nhất":          "#e67e22",
     }
-    st.markdown(
-        """
-        <div style="display:flex; gap:24px; flex-wrap:wrap; margin:8px 0 12px 0;">
-          <span><span style="display:inline-block;width:12px;height:12px;background:#2ecc71;margin-right:6px;"></span>Hệ thống hiện tại</span>
-          <span><span style="display:inline-block;width:12px;height:12px;background:#95a5a6;margin-right:6px;"></span>Ngẫu nhiên</span>
-          <span><span style="display:inline-block;width:12px;height:12px;background:#3498db;margin-right:6px;"></span>Phổ biến nhất</span>
-          <span><span style="display:inline-block;width:12px;height:12px;background:#e67e22;margin-right:6px;"></span>Gần nhất</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    method_order = [method_labels[m] for m in methods]
+    y_positions = list(range(len(methods) - 1, -1, -1))
 
-    fig = px.bar(
-        df, x="Giá trị", y="Phương pháp", color="Phương pháp",
-        facet_col="Chỉ số", orientation="h",
-        color_discrete_map=color_map,
-        text_auto=".3f",
+    fig = make_subplots(
+        rows=1,
+        cols=len(metric_display),
+        subplot_titles=list(metric_display.values()),
+        horizontal_spacing=0.06,
     )
+    for col, (metric, _) in enumerate(metric_display.items(), start=1):
+        values = [
+            round(float(np.mean(agg[method][metric])) if agg[method][metric] else 0, 4)
+            for method in methods
+        ]
+        labels = [method_labels[method] for method in methods]
+        fig.add_trace(
+            go.Bar(
+                x=values,
+                y=y_positions,
+                orientation="h",
+                marker_color=[color_map[label] for label in labels],
+                text=[f"{value:.3f}" for value in values],
+                textposition="outside",
+                width=0.55,
+                hovertemplate="%{customdata}<br>Giá trị: %{x:.3f}<extra></extra>",
+                customdata=labels,
+            ),
+            row=1,
+            col=col,
+        )
+
     fig.update_layout(
         showlegend=False,
         height=420,
@@ -215,30 +216,33 @@ def _render_baseline_comparison(scenario_results: list[dict]) -> None:
         uniformtext_minsize=16, 
         uniformtext_mode='show'
     )
-    fig.update_xaxes(
-        range=[0, 1.15],
-        showgrid=False,
-        showline=True,
-        linecolor="#d0d0d0",
-        linewidth=1,
-        zeroline=False,
-    )
-    fig.update_yaxes(
-        categoryorder="array",
-        categoryarray=[method_labels[m] for m in reversed(methods)],
-        showticklabels=False,
-        title_text="Phương pháp",
-        showgrid=False,
-        showline=True,
-        linecolor="#d0d0d0",
-        linewidth=1,
-        automargin=True,
-    )
-    fig.update_traces(width=0.55, textposition="outside", textfont_size=16)
-    # Clean up facet titles (e.g. "Chỉ số=Precision@5" -> "Precision@5")
-    fig.for_each_annotation(
-        lambda a: a.update(text=a.text.split("=")[-1], xanchor="center", align="center")
-    )
+    for col in range(1, len(metric_display) + 1):
+        fig.update_xaxes(
+            row=1,
+            col=col,
+            range=[0, 1.15],
+            title_text="Giá trị",
+            showgrid=False,
+            showline=True,
+            linecolor="#d0d0d0",
+            linewidth=1,
+            zeroline=False,
+        )
+        fig.update_yaxes(
+            row=1,
+            col=col,
+            range=[-0.6, len(methods) - 0.4],
+            tickmode="array",
+            tickvals=y_positions,
+            ticktext=method_order,
+            title_text="Phương pháp",
+            showgrid=False,
+            showline=True,
+            linecolor="#d0d0d0",
+            linewidth=1,
+            zeroline=False,
+            automargin=True,
+        )
     st.plotly_chart(fig, width='stretch', theme=None)
 
 
