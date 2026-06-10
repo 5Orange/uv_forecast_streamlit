@@ -30,7 +30,7 @@ from config import FINAL_FEATURES
 
 SKIN_OPTIONS = {
     1: "1 - Rất trắng, dễ cháy nắng",
-    2: "2 - Trắng, dễ cháy",
+    2: "2 - Trắng, dễ cháy nắng",
     3: "3 - Trung bình",
     4: "4 - Olive",
     5: "5 - Nâu",

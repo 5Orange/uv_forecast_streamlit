@@ -149,7 +149,7 @@ def _render_baseline_comparison(scenario_results: list[dict]) -> None:
 
     agg: dict[str, dict[str, list]] = {m: {"precision": [], "recall": [], "ndcg": []} for m in methods}
 
-    for sc_res in scenario_results[:25]:
+    for sc_res in scenario_results:
         sc = {
             "user_profile": sc_res["user_profile"],
             "context":      sc_res["context"],

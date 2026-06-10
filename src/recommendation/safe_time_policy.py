@@ -23,7 +23,7 @@ SKIN_TYPE_MULTIPLIER = {
 
 # Vietnamese Fitzpatrick labels for UI
 SKIN_TYPE_LABELS_VI = {
-    1: "Loại I - Rất trắng, luôn cháy nắng",
+    1: "Loại I - Rất trắng, dễ cháy nắng",
     2: "Loại II - Trắng, dễ cháy nắng",
     3: "Loại III - Trung bình, đôi khi cháy nắng",
     4: "Loại IV - Olive, hiếm khi cháy nắng",
