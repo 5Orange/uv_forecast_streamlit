@@ -196,7 +196,7 @@ def _render_baseline_comparison(scenario_results: list[dict]) -> None:
     )
     fig.update_layout(
         showlegend=False,
-        height=280,
+        height=650,
         margin=dict(l=10, r=10, t=30, b=10),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
