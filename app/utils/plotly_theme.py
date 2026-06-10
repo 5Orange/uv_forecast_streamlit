@@ -19,18 +19,22 @@ def apply_presentation_text(fig: go.Figure) -> go.Figure:
             font=dict(color=PLOTLY_TEXT_COLOR, size=13),
         ),
     )
-    fig.update_xaxes(
-        title_font=dict(color=PLOTLY_TEXT_COLOR, size=16),
-        tickfont=dict(color=PLOTLY_TEXT_COLOR, size=13),
-        gridcolor=PLOTLY_GRID_COLOR,
-        zerolinecolor=PLOTLY_GRID_COLOR,
-    )
-    fig.update_yaxes(
-        title_font=dict(color=PLOTLY_TEXT_COLOR, size=16),
-        tickfont=dict(color=PLOTLY_TEXT_COLOR, size=13),
-        gridcolor=PLOTLY_GRID_COLOR,
-        zerolinecolor=PLOTLY_GRID_COLOR,
-    )
+    for axis in fig.layout.to_plotly_json():
+        if axis.startswith("xaxis") or axis.startswith("yaxis"):
+            ax = fig.layout[axis]
+            # Preserve tick font size if already set larger than default
+            cur_tick_size = getattr(ax.tickfont, "size", None) if ax.tickfont else None
+            tick_size = cur_tick_size if cur_tick_size and cur_tick_size > 13 else 13
+            # Preserve title font size if already set larger than default
+            title_font = getattr(ax.title, "font", None) if ax.title else None
+            cur_title_size = getattr(title_font, "size", None) if title_font else None
+            title_size = cur_title_size if cur_title_size and cur_title_size > 16 else 16
+            fig.layout[axis].update(
+                title_font=dict(color=PLOTLY_TEXT_COLOR, size=title_size),
+                tickfont=dict(color=PLOTLY_TEXT_COLOR, size=tick_size),
+                gridcolor=PLOTLY_GRID_COLOR,
+                zerolinecolor=PLOTLY_GRID_COLOR,
+            )
     fig.update_traces(textfont=dict(color=PLOTLY_TEXT_COLOR), selector=dict(type="bar"))
     fig.update_traces(textfont=dict(color=PLOTLY_TEXT_COLOR), selector=dict(type="histogram"))
     fig.update_traces(textfont=dict(color=PLOTLY_TEXT_COLOR), selector=dict(type="pie"))

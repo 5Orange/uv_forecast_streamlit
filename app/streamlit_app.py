@@ -222,7 +222,7 @@ elif active_tab == "🌍 Gợi ý hoạt động":
     with main_content.container():
         available_reg = get_available_models()
         if available_reg:
-            col_m, col_s, col_d, col_r = st.columns([2, 3, 2, 2])
+            col_m, col_s = st.columns([2, 7])
             with col_m:
                 selected_rec_model = st.selectbox(
                     "Mô hình Regression",
@@ -231,14 +231,15 @@ elif active_tab == "🌍 Gợi ý hoạt động":
                     help="Mô hình dùng để dự báo UV cho gợi ý hoạt động",
                 )
             with col_s:
-                skin_label = st.radio(
+                skin_type = st.segmented_control(
                     "Loại da (Thang Fitzpatrick)",
-                    options=list(SKIN_OPTIONS.values()),
-                    index=2,
-                    horizontal=True,
-                    key="skin_type_radio",
+                    options=list(SKIN_OPTIONS.keys()),
+                    default=3,
+                    format_func=lambda skin_id: SKIN_OPTIONS[skin_id],
+                    key="skin_type_slicer",
+                    width="stretch",
                 )
-                skin_type = next(k for k, v in SKIN_OPTIONS.items() if v == skin_label)
+            col_d, col_r = st.columns(2)
             with col_d:
                 activity_duration = st.slider(
                     "Thời gian hoạt động (phút)",

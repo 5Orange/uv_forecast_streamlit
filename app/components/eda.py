@@ -215,7 +215,7 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
                 )
                 fig_corr.update_traces(
                     hoverongaps=False,
-                    textfont=dict(size=16),
+                    textfont=dict(size=19, family="Time New Roman"),
                 )
                 fig_corr.update_layout(
                     height=corr_height,
@@ -231,11 +231,11 @@ def render(df: pd.DataFrame, selected_locs: list[str]):
                 )
                 fig_corr.update_xaxes(
                     tickangle=45,
-                    tickfont=dict(size=15),
+                    tickfont=dict(size=18),
                     automargin=True,
                 )
                 fig_corr.update_yaxes(
-                    tickfont=dict(size=15),
+                    tickfont=dict(size=18),
                     automargin=True,
                 )
                 st.plotly_chart(fig_corr, width='stretch')
