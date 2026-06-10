@@ -126,16 +126,16 @@ def _render_metric_overview(overall: dict, baseline: dict) -> None:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _render_baseline_comparison(scenario_results: list[dict]) -> None:
-    st.subheader("📊 So sánh với Baseline")
+    st.subheader("So sánh với Baseline")
     st.caption("Hệ thống hiện tại so với 3 phương pháp cơ sở - chỉ số Precision@5 trung bình")
 
     # Aggregate per-scenario baseline comparisons
     methods = ["current", "random", "popular", "distance_only"]
     method_labels = {
-        "current":       "🤖 Hệ thống hiện tại",
-        "random":        "🎲 Ngẫu nhiên",
-        "popular":       "⭐ Phổ biến nhất",
-        "distance_only": "📐 Gần nhất",
+        "current":       "Hệ thống hiện tại",
+        "random":        "Ngẫu nhiên",
+        "popular":       "Phổ biến nhất",
+        "distance_only": "Gần nhất",
     }
 
     # Re-compute from scenario_results metrics (current system only available here)
@@ -182,11 +182,22 @@ def _render_baseline_comparison(scenario_results: list[dict]) -> None:
     df = pd.DataFrame(bar_data)
 
     color_map = {
-        "🤖 Hệ thống hiện tại": "#2ecc71",
-        "🎲 Ngẫu nhiên":        "#95a5a6",
-        "⭐ Phổ biến nhất":     "#3498db",
-        "📐 Gần nhất":          "#e67e22",
+        "Hệ thống hiện tại": "#2ecc71",
+        "Ngẫu nhiên":        "#95a5a6",
+        "Phổ biến nhất":     "#3498db",
+        "Gần nhất":          "#e67e22",
     }
+    st.markdown(
+        """
+        <div style="display:flex; gap:24px; flex-wrap:wrap; margin:8px 0 12px 0;">
+          <span><span style="display:inline-block;width:12px;height:12px;background:#2ecc71;margin-right:6px;"></span>Hệ thống hiện tại</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#95a5a6;margin-right:6px;"></span>Ngẫu nhiên</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#3498db;margin-right:6px;"></span>Phổ biến nhất</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#e67e22;margin-right:6px;"></span>Gần nhất</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     fig = px.bar(
         df, x="Giá trị", y="Phương pháp", color="Phương pháp",
@@ -196,17 +207,38 @@ def _render_baseline_comparison(scenario_results: list[dict]) -> None:
     )
     fig.update_layout(
         showlegend=False,
-        height=650,
+        height=420,
         margin=dict(l=10, r=10, t=30, b=10),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
+        bargap=0.28,
         uniformtext_minsize=16, 
         uniformtext_mode='show'
     )
-    fig.update_xaxes(range=[0, 1.15])
-    fig.update_traces(textposition="outside", textfont_size=16)
+    fig.update_xaxes(
+        range=[0, 1.15],
+        showgrid=False,
+        showline=True,
+        linecolor="#d0d0d0",
+        linewidth=1,
+        zeroline=False,
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=[method_labels[m] for m in reversed(methods)],
+        showticklabels=False,
+        title_text="Phương pháp",
+        showgrid=False,
+        showline=True,
+        linecolor="#d0d0d0",
+        linewidth=1,
+        automargin=True,
+    )
+    fig.update_traces(width=0.55, textposition="outside", textfont_size=16)
     # Clean up facet titles (e.g. "Chỉ số=Precision@5" -> "Precision@5")
-    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+    fig.for_each_annotation(
+        lambda a: a.update(text=a.text.split("=")[-1], xanchor="center", align="center")
+    )
     st.plotly_chart(fig, width='stretch', theme=None)
 
 
