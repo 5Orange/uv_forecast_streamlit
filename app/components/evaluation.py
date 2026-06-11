@@ -162,6 +162,9 @@ def _render_baseline_comparison(scenario_results: list[dict]) -> None:
         recs = sc_res["top5"]  # already-scored current system top-5
 
         comp = comparator.compare_all(recs, gt, user_lat, user_lon, 5, popularity)
+        # Ghi đè metrics của 'current' bằng metrics đã tính đúng từ toàn bộ danh sách (để NDCG chính xác)
+        comp["current"] = sc_res["metrics"]
+        
         for method in methods:
             m = comp.get(method, {})
             agg[method]["precision"].append(m.get("precision_at_k", 0))

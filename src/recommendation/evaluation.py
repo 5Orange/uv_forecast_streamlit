@@ -161,7 +161,7 @@ class BaselineComparator:
 
     def random_baseline(self, k: int = 5) -> Recommendations:
         """Random selection from catalog."""
-        sample = random.sample(self.catalog, min(k, len(self.catalog)))
+        sample = random.sample(self.catalog, len(self.catalog))
         return [{"name": p["name"], "type": p.get("type", ""), "score": random.random()} for p in sample]
 
     def popular_baseline(
@@ -177,7 +177,7 @@ class BaselineComparator:
         )
         return [
             {"name": p["name"], "type": p.get("type", ""), "score": popularity.get(p["name"], 0)}
-            for p in sorted_catalog[:k]
+            for p in sorted_catalog
         ]
 
     def distance_only_baseline(
@@ -207,7 +207,7 @@ class BaselineComparator:
                 "score": 1.0 / (1.0 + dist(p)),
                 "distance_km": round(dist(p), 1),
             }
-            for p in sorted_catalog[:k]
+            for p in sorted_catalog
         ]
 
     def compare_all(
