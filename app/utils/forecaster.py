@@ -65,21 +65,19 @@ def _request_with_fallback(url: str, params: dict, cache_key: str) -> dict:
     cache_file = cache_dir / f"{cache_key}.json"
     
     last_error = None
-    # 1. Try to fetch from API with 3 retries
-    for attempt in range(3):
-        try:
-            resp = requests.get(url, params=params, timeout=15)
-            resp.raise_for_status()
-            data = resp.json()
-            # 2. Save successful response to disk for future fallback
-            with open(cache_file, "w") as f:
-                json.dump(data, f)
-            return data
-        except Exception as e:
-            last_error = e
-            time.sleep(1) # Wait before retry
-            
-    # 3. If API fails after retries, load from local fallback cache
+    # 1. Try to fetch from API (fast timeout for presentation)
+    try:
+        resp = requests.get(url, params=params, timeout=3)
+        resp.raise_for_status()
+        data = resp.json()
+        # 2. Save successful response to disk for future fallback
+        with open(cache_file, "w") as f:
+            json.dump(data, f)
+        return data
+    except Exception as e:
+        last_error = e
+        
+    # 3. If API fails, INSTANTLY load from local fallback cache
     if cache_file.exists():
         with open(cache_file, "r") as f:
             return json.load(f)
@@ -220,7 +218,7 @@ def _fetch_combined_data(loc_id: str, loc:dict, forecast_day: int, need_history:
                 combined_df[col] = combined_df[col].ffill()
         return combined_df
     except Exception as e:
-        st.warning(f"could not fetch historical data for {loc['name']} : {e}")
+        print(f"could not fetch historical data for {loc['name']} : {e}")
         return forecast_df
 
 
@@ -350,29 +348,22 @@ def _predict(
                 )
                 if serving_preds is not None:
                     preds[daytime] = np.maximum(0, serving_preds)
-                    st.session_state['prediction_source'] = 'databricks_serving'
                 else:
                     if model is not None:
-                        st.warning("Databricks serving failed, using local model")
+                        print("Databricks serving failed, using local model")
                         preds[daytime] = np.maximum(0, model.predict(model_input))
-                        st.session_state['prediction_source'] = 'local_fallback'
                     else:
-                        st.error("Databricks serving failed, No local model")
-                        st.session_state['prediction_source'] = 'failed'
+                        print("Databricks serving failed, No local model")
             except Exception as e:
                 if model is not None:
-                    st.warning(f"Serving error: {e}, using local model")
+                    print(f"Serving error: {e}, using local model")
                     preds[daytime] = np.maximum(0, model.predict(model_input))
-                    st.session_state['prediction_source'] = 'local_fallback'
                 else:
-                    st.error("Serving error: No local model")
-                    st.session_state['prediction_source'] = 'failed'
+                    print("Serving error: No local model")
         elif model is not None:
             preds[daytime] = np.maximum(0, model.predict(model_input))
-            st.session_state['prediction_source'] = 'local'
         else:
-            st.error("Serving error: No local model")
-            st.session_state['prediction_source'] = 'failed'
+            print("Serving error: No local model")
     df["uv_predicted"] = preds
 
     solar_scale = None
@@ -437,7 +428,7 @@ def get_live_forecast(
 
     model = load_optimized_model(regression_model)
     if model is None and not use_serving:
-        st.error(f"Không thể tải mô hình '{regression_model}'. Dự báo không khả dụng.")
+        print(f"Không thể tải mô hình '{regression_model}'. Dự báo không khả dụng.")
         return pd.DataFrame()
 
     feat_cols = list(FINAL_22_FEATURES)
@@ -451,7 +442,7 @@ def get_live_forecast(
         try:
             df = _fetch_combined_data(loc_id, loc, forecast_days, need_history)
         except Exception as e:
-            st.warning(f"⚠️ Không thể tải dữ liệu cho {loc['name']}: {e}")
+            print(f"⚠️ Không thể tải dữ liệu cho {loc['name']}: {e}")
             continue
 
         if not df.empty:
