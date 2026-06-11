@@ -141,3 +141,6 @@ python_cache_key.md5
 /models/
 /.env
 /data/
+/.agent/
+/system_review/
+/tong hop/
