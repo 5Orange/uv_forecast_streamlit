@@ -54,6 +54,7 @@ _HISTORY_HOURS = 120  # 5 days
 
 # Default fallback — will be overridden by dynamic computation from training data
 _OZONE_Q25_DEFAULT = 56.0
+_GLOBAL_STATE = {"circuit_breaker": False}
 
 def _request_with_fallback(url: str, params: dict, cache_key: str) -> dict:
     """
@@ -64,6 +65,13 @@ def _request_with_fallback(url: str, params: dict, cache_key: str) -> dict:
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_file = cache_dir / f"{cache_key}.json"
     
+    if _GLOBAL_STATE.get("circuit_breaker", False):
+        if cache_file.exists():
+            with open(cache_file, "r") as f:
+                return json.load(f)
+        else:
+            raise ValueError(f"API down & no fallback data for {cache_key}")
+            
     last_error = None
     # 1. Try to fetch from API (fast timeout for presentation)
     try:
@@ -76,6 +84,7 @@ def _request_with_fallback(url: str, params: dict, cache_key: str) -> dict:
         return data
     except Exception as e:
         last_error = e
+        _GLOBAL_STATE["circuit_breaker"] = True
         
     # 3. If API fails, INSTANTLY load from local fallback cache
     if cache_file.exists():
@@ -438,7 +447,19 @@ def get_live_forecast(
     model_type = _get_model_type(regression_model)
     need_history = model_type in ("sequence", "prophet")
 
-    for loc_id, loc in LOCATIONS.items():
+    _GLOBAL_STATE["circuit_breaker"] = False
+    
+    import os
+    def get_loc_cache_age(loc_id: str) -> float:
+        cache_dir = ROOT / "data" / "api_fallback_cache"
+        cache_file = cache_dir / f"{loc_id}_forecast_weather_{forecast_days}d.json"
+        if cache_file.exists():
+            return os.path.getmtime(cache_file)
+        return 0.0
+        
+    sorted_locations = sorted(LOCATIONS.items(), key=lambda x: get_loc_cache_age(x[0]))
+
+    for loc_id, loc in sorted_locations:
         try:
             df = _fetch_combined_data(loc_id, loc, forecast_days, need_history)
         except Exception as e:
