@@ -70,7 +70,7 @@ UV_CATEGORIES = {
     "very_high": (8,  10),
     "extreme":   (11, float("inf"))
 }
-UV_CATEGORY_BINS   = [-0.1, 2, 5, 7, 10, float("inf")]
+UV_CATEGORY_BINS   = [-0.1, 3, 6, 8, 11, float("inf")]
 UV_CATEGORY_LABELS = [0, 1, 2, 3, 4]  # int labels matching uv_category target
 UV_CATEGORY_NAMES  = ["low", "moderate", "high", "very_high", "extreme"]
 

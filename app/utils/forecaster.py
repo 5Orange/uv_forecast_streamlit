@@ -381,12 +381,13 @@ def _predict(
             uv_pred,
             bins=UV_CATEGORY_BINS,
             labels=["Low", "Moderate", "High", "Very High", "Extreme"],
+            right=False,
         ).astype(str).values
 
     return df
 
 
-@st.cache_data(ttl=1800, show_spinner=False)
+@st.cache_data(ttl=10800, show_spinner=False)
 def get_live_forecast(
     forecast_days: int = 7,
     regression_model: str = "Random Forest",

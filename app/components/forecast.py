@@ -47,20 +47,20 @@ WEEKDAY_VI = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", 
 
 
 def _get_cat(uv_val: float) -> str:
-    if uv_val <= 2: return "Low"
-    if uv_val <= 5: return "Moderate"
-    if uv_val <= 7: return "High"
-    if uv_val <= 10: return "Very High"
+    if uv_val < 3: return "Low"
+    if uv_val < 6: return "Moderate"
+    if uv_val < 8: return "High"
+    if uv_val < 11: return "Very High"
     return "Extreme"
 
 
 def _add_who_bands(fig: go.Figure) -> go.Figure:
     bands = [
-        (0, 2,   "rgba(39,174,96,0.07)",   "Thấp (0-2)"),
-        (2, 5,   "rgba(241,196,15,0.07)",  "Trung bình (3-5)"),
-        (5, 7,   "rgba(230,126,34,0.07)",  "Cao (6-7)"),
-        (7, 10,  "rgba(231,76,60,0.07)",   "Rất cao (8-10)"),
-        (10, 14, "rgba(142,68,173,0.07)",  "Cực đoan (11+)"),
+        (0, 3,   "rgba(39,174,96,0.07)",   "Thấp (0-2.9)"),
+        (3, 6,   "rgba(241,196,15,0.07)",  "Trung bình (3-5.9)"),
+        (6, 8,   "rgba(230,126,34,0.07)",  "Cao (6-7.9)"),
+        (8, 11,  "rgba(231,76,60,0.07)",   "Rất cao (8-10.9)"),
+        (11, 14, "rgba(142,68,173,0.07)",  "Cực đoan (11+)"),
     ]
     for y0, y1, color, label in bands:
         fig.add_hrect(y0=y0, y1=y1, fillcolor=color, line_width=0,
@@ -362,7 +362,7 @@ def render(selected_locs: list[str], regression_model: str = "Random Forest", us
             get_live_forecast.clear()
             st.rerun()
     # with col_info:
-    #     st.caption("Dự báo được cache 30 phút")
+    #     st.caption("Dự báo được cache 3 giờ")
 
     fc = get_live_forecast(
         forecast_days=7,
