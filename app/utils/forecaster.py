@@ -81,7 +81,6 @@ def _request_with_fallback(url: str, params: dict, cache_key: str) -> dict:
             
     # 3. If API fails after retries, load from local fallback cache
     if cache_file.exists():
-        st.toast(f"⚠️ API {url.split('//')[-1].split('/')[0]} lỗi ({last_error}). Đang dùng dữ liệu dự phòng!", icon="⚠️")
         with open(cache_file, "r") as f:
             return json.load(f)
     else:
